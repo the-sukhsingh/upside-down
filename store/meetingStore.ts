@@ -8,6 +8,7 @@ import {
   RecordingLifecycleStatus,
   Commitment,
   PreMeetingBriefing,
+  LiveContextMatch,
 } from '@/types/meeting';
 
 export interface ProcessingState {
@@ -27,6 +28,8 @@ interface ActiveRecordingState {
   meetingTitle: string;
   audioUri: string | null;
   meterLevel: number;
+  liveTopics?: string[];
+  pinnedContexts?: LiveContextMatch[];
 }
 
 const INITIAL_SETTINGS: UserSettings = {
@@ -296,6 +299,12 @@ interface MeetingStoreState {
   // Pre-Meeting Briefing
   setMeetingBriefing: (meetingId: string, briefing: PreMeetingBriefing) => void;
 
+  // Live Topic & Context Radar
+  addLiveTopic: (topic: string) => void;
+  pinLiveContext: (context: LiveContextMatch) => void;
+  unpinLiveContext: (contextId: string) => void;
+  clearLiveTopics: () => void;
+
   // Processing state
   setProcessingState: (updates: Partial<ProcessingState>) => void;
   resetProcessingState: () => void;
@@ -326,6 +335,8 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
     meetingTitle: 'Meeting Note Session',
     audioUri: null,
     meterLevel: 0,
+    liveTopics: [],
+    pinnedContexts: [],
   },
 
   processingState: {
@@ -355,6 +366,8 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
         meetingTitle: targetTitle,
         audioUri: null,
         meterLevel: 0.25,
+        liveTopics: [],
+        pinnedContexts: [],
       },
     });
   },
@@ -383,6 +396,52 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
     }));
   },
 
+  addLiveTopic: (topic) => {
+    if (!topic || typeof topic !== 'string') return;
+    const cleanTopic = topic.trim();
+    if (!cleanTopic) return;
+    const current = get().activeRecording.liveTopics || [];
+    if (!current.some((t) => t.toLowerCase() === cleanTopic.toLowerCase())) {
+      set((state) => ({
+        activeRecording: {
+          ...state.activeRecording,
+          liveTopics: [cleanTopic, ...current].slice(0, 15),
+        },
+      }));
+    }
+  },
+
+  pinLiveContext: (context) => {
+    const current = get().activeRecording.pinnedContexts || [];
+    if (!current.some((c) => c.id === context.id)) {
+      set((state) => ({
+        activeRecording: {
+          ...state.activeRecording,
+          pinnedContexts: [...current, { ...context, isPinned: true }],
+        },
+      }));
+    }
+  },
+
+  unpinLiveContext: (contextId) => {
+    set((state) => ({
+      activeRecording: {
+        ...state.activeRecording,
+        pinnedContexts: (state.activeRecording.pinnedContexts || []).filter((c) => c.id !== contextId),
+      },
+    }));
+  },
+
+  clearLiveTopics: () => {
+    set((state) => ({
+      activeRecording: {
+        ...state.activeRecording,
+        liveTopics: [],
+        pinnedContexts: [],
+      },
+    }));
+  },
+
   discardRecordingSession: () => {
     const active = get().activeRecording;
     if (active.meetingId) {
@@ -398,6 +457,8 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
         meetingTitle: 'Meeting Note Session',
         audioUri: null,
         meterLevel: 0,
+        liveTopics: [],
+        pinnedContexts: [],
       },
     });
   },
@@ -429,6 +490,8 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
         meetingTitle: 'Meeting Note Session',
         audioUri: null,
         meterLevel: 0,
+        liveTopics: [],
+        pinnedContexts: [],
       },
     }));
 

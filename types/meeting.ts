@@ -153,3 +153,29 @@ export interface UserSettings {
   autoSummarize: boolean;
   audioQuality: 'high' | 'standard';
 }
+
+export interface LiveContextMatch {
+  id: string;
+  recordingId: string;
+  meetingId?: string;
+  meetingTitle: string;
+  date: string;
+  matchedTopic: string;
+  relevanceScore: number; // 0.0 - 1.0
+  aiSynthesis?: string;
+  keyDecisions: string[];
+  openCommitments: Commitment[];
+  actionItems: ActionItem[];
+  relevantSnippet?: string;
+  tags?: string[];
+  isPinned?: boolean;
+}
+
+export interface LiveTopicRadarState {
+  isActive: boolean;
+  isListening: boolean;
+  currentSpeechSnippet?: string;
+  detectedTopics: string[];
+  matchedContexts: LiveContextMatch[];
+  pinnedContexts: LiveContextMatch[];
+}

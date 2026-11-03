@@ -6,6 +6,7 @@ import {
   KeyDecisionItem,
   TranscriptSegment,
   EvidenceCitation,
+  LiveContextMatch,
 } from '@/types/meeting';
 import { getGroqApiKey, getSarvamApiKey } from '@/constants/ApiConfig';
 
@@ -122,7 +123,8 @@ class AINoteService {
     parsed: any,
     meetingTitle: string,
     providerName: string,
-    segments?: TranscriptSegment[]
+    segments?: TranscriptSegment[],
+    pinnedContexts?: LiveContextMatch[]
   ): { summary: MeetingSummary; notes: string; tags: string[]; commitments: Commitment[] } {
     const rawDecisions = parsed.keyDecisions || [];
     const structuredDecisions: KeyDecisionItem[] = rawDecisions.map((d: any, idx: number) => {
@@ -186,7 +188,7 @@ class AINoteService {
       followUps: parsed.followUps || [],
     };
 
-    const notes = this.formatMarkdown(meetingTitle, summary);
+    const notes = this.formatMarkdown(meetingTitle, summary, pinnedContexts);
     const tags = parsed.tags || [providerName, 'AI Notes'];
 
     return { summary, notes, tags, commitments };
@@ -201,7 +203,8 @@ class AINoteService {
     apiKey: string,
     modelId: string = 'openai/gpt-oss-120b',
     segments?: TranscriptSegment[],
-    onProgress?: AINoteProgressCallback
+    onProgress?: AINoteProgressCallback,
+    pinnedContexts?: LiveContextMatch[]
   ): Promise<{ summary: MeetingSummary; notes: string; tags: string[]; commitments: Commitment[] }> {
     const effectiveModel = this.resolveGroqModel(modelId);
     onProgress?.(`Connecting to Groq AI (${effectiveModel})...`, 25);
@@ -266,7 +269,7 @@ class AINoteService {
       }
     }
 
-    return this.processModelOutput(parsed, meetingTitle, 'Groq', segments);
+    return this.processModelOutput(parsed, meetingTitle, 'Groq', segments, pinnedContexts);
   }
 
   /**
@@ -278,7 +281,8 @@ class AINoteService {
     apiKey: string,
     modelId: string = 'sarvam-105b',
     segments?: TranscriptSegment[],
-    onProgress?: AINoteProgressCallback
+    onProgress?: AINoteProgressCallback,
+    pinnedContexts?: LiveContextMatch[]
   ): Promise<{ summary: MeetingSummary; notes: string; tags: string[]; commitments: Commitment[] }> {
     onProgress?.(`Connecting to Sarvam AI (${modelId})...`, 25);
 
@@ -321,7 +325,7 @@ class AINoteService {
       throw new Error(`Invalid JSON received from Sarvam: ${rawContent.slice(0, 150)}`);
     }
 
-    return this.processModelOutput(parsed, meetingTitle, 'Sarvam AI', segments);
+    return this.processModelOutput(parsed, meetingTitle, 'Sarvam AI', segments, pinnedContexts);
   }
 
   /**
@@ -336,6 +340,7 @@ class AINoteService {
       sarvamLlmModel?: string;
       segments?: TranscriptSegment[];
       onProgress?: AINoteProgressCallback;
+      pinnedContexts?: LiveContextMatch[];
     } = {}
   ): Promise<AINoteResult> {
     const startTime = Date.now();
@@ -346,6 +351,7 @@ class AINoteService {
       sarvamLlmModel = 'sarvam-105b',
       segments,
       onProgress,
+      pinnedContexts,
     } = options;
 
     const groqKey = getGroqApiKey();
@@ -363,7 +369,8 @@ class AINoteService {
         groqKey,
         effectiveGroqModel,
         segments,
-        onProgress
+        onProgress,
+        pinnedContexts
       );
       onProgress?.('Complete.', 100);
       return {
@@ -385,7 +392,8 @@ class AINoteService {
         sarvamKey,
         sarvamLlmModel,
         segments,
-        onProgress
+        onProgress,
+        pinnedContexts
       );
       onProgress?.('Complete.', 100);
       return {
@@ -405,7 +413,11 @@ class AINoteService {
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
-  private formatMarkdown(title: string, summary: MeetingSummary): string {
+  private formatMarkdown(
+    title: string,
+    summary: MeetingSummary,
+    pinnedContexts?: LiveContextMatch[]
+  ): string {
     const today = new Date().toLocaleDateString('en-US', {
       month: 'long',
       day: 'numeric',
@@ -466,6 +478,19 @@ class AINoteService {
         ? followUpsList.map((f) => `- ${f}`).join('\n')
         : '- *Review during next sync.*';
 
+    const pinnedSection =
+      pinnedContexts && pinnedContexts.length > 0
+        ? `\n## 💡 Referenced Historical Context ("Live Topic Radar")\n` +
+          pinnedContexts
+            .map(
+              (p) =>
+                `- **${p.meetingTitle}** (${p.date})\n  *Matched Topic:* #${p.matchedTopic}\n  *Prior Decision:* ${p.keyDecisions[0] || 'Prior alignment'}` +
+                (p.openCommitments[0] ? `\n  *Prior Commitment:* "${p.openCommitments[0].promise}"` : '')
+            )
+            .join('\n\n') +
+          '\n'
+        : '';
+
     return `# ${title}
 *Date: ${today}*
 
@@ -484,7 +509,7 @@ ${iOweText}
 
 ### 📥 They Owe Me (Incoming Commitments)
 ${theyOweText}
-
+${pinnedSection}
 ## Next Steps
 ${followUpsText}
 `;
