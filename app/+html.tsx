@@ -37,6 +37,22 @@ export default function Root({ children }: { children: ReactNode }) {
 }
 
 const globalWebStyles = `
+@font-face {
+  font-family: 'ionicons';
+  src: url('/fonts/Ionicons.ttf') format('truetype'),
+       url('https://cdn.jsdelivr.net/npm/@expo/vector-icons@15.1.1/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Ionicons';
+  src: url('/fonts/Ionicons.ttf') format('truetype'),
+       url('https://cdn.jsdelivr.net/npm/@expo/vector-icons@15.1.1/build/vendor/react-native-vector-icons/Fonts/Ionicons.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
 html, body, #root {
   height: 100%;
   width: 100%;

@@ -343,7 +343,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   floatingCameraFab: {
     position: 'absolute',
-    left: 20,
+    right: 20,
     width: 52,
     height: 52,
     borderRadius: 26,
