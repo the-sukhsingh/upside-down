@@ -18,6 +18,7 @@ import { audioRecorder } from '@/services/audioRecorder';
 import { transcriptionService } from '@/services/transcriptionService';
 import { aiNoteService } from '@/services/aiNoteService';
 import { WaveformVisualizer } from '@/components/WaveformVisualizer';
+import { LiveTopicRadar } from '@/components/LiveTopicRadar';
 import { ToastNotification, ToastConfig } from '@/components/ToastNotification';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
@@ -238,6 +239,7 @@ export default function RecordScreen() {
           groqLlmModel: settings.groqLlmModel,
           sarvamLlmModel: settings.sarvamLlmModel,
           segments: transcriptionResult.segments,
+          pinnedContexts: activeRecording.pinnedContexts,
           onProgress: (stage, percent) => {
             setProcessingState({
               currentStage: 'summarizing',
@@ -583,6 +585,13 @@ export default function RecordScreen() {
                 barCount={26}
               />
             </View>
+
+            {/* Live Topic & Context Radar (Surfaces past project/meeting notes in near real-time) */}
+            <LiveTopicRadar
+              isRecording={activeRecording.isRecording}
+              isPaused={activeRecording.isPaused}
+              currentMeetingId={activeRecording.meetingId}
+            />
 
             <Text style={[styles.recordingHint, { color: colors.textSecondary }]}>
               Audio is captured locally. No streaming data is sent over the network.
