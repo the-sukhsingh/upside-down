@@ -56,6 +56,17 @@ Designed around zero-interruption recording: captures local high-fidelity audio 
 - **Automated Intelligence Extraction**: Converts visual snapshots into complete executive summaries, structured decisions, action items with owners, and Promise Radar commitments.
 - **Instant Note Library Integration**: Saves directly to the local knowledge base with immediate navigation to `/notes/[id]`.
 
+### 8. ⚡ Idea Collision Engine
+- **Generates New Thinking Beyond Retrieval**: Rather than simply finding old notes, MeetaNotes discovers useful, non-obvious connections between thoughts recorded weeks or months apart to synthesize entirely new ideas.
+- **Shared Mechanism & Latent Principle**: Surfaces the deep structural mechanism uniting disparate thoughts (e.g., how game micro-rewards + student motivation scaffolding solve user retention drops in habit tracking).
+- **5-Point Breakthrough Card**:
+  - 🔗 **Original Source Notes**: Previews date recorded, original meeting title, and excerpt quotes with 1-tap navigation to the source note.
+  - 🏷️ **Overlapping Concepts**: Tag chips highlighting the conceptual intersection and structural parallels.
+  - 💡 **Why This Is Useful**: Concrete explanation of how marrying the concepts unlocks new value or practical breakthroughs.
+  - 🔬 **Small Testable Experiment**: Low-stakes, 48-hour experiment or prototype to validate the resulting idea in the real world with experiment tracking (`Testing`).
+  - 🗑️ **1-Tap Weak Connection Dismissal & Bookmarking**: Complete user control to dismiss weak suggestions or save/star high-conviction breakthroughs.
+- **Groq LPU Instant Synthesis & Offline Heuristic Fallback**: AI synthesis powered by Groq LPU models (`llama-3.1-8b-instant`) with automatic fallback to high-speed latent relationship mapping when offline.
+
 ---
 
 ## 🔑 Abstracted API Configuration
