@@ -42,6 +42,13 @@ Designed around zero-interruption recording: captures local high-fidelity audio 
 - **One-Tap Google Calendar**: Launches Google Calendar with title, description, and deadline pre-populated.
 - **Universal iCalendar (.ics) Export**: Generates standard RFC 5545 `.ics` files with alarm reminders (`VALARM`) for bulk import into Apple Calendar, Outlook, and Google Calendar.
 
+### 6. 🛰️ Real-Time Context Recall (“Live Topic Radar”)
+- **Spoken Topic & Entity Extraction**: As the user speaks during an active recording, the radar extracts technical terms, project names, and keywords in near real-time.
+- **Instant Historical Knowledge Matching**: Searches the device's entire meeting knowledge base and surfaces related past decisions, open commitments, and action items.
+- **Ultra-Fast AI Briefing Flashcards**: Powered by Groq's sub-150ms inference to synthesize a 1-sentence "What you need to know right now" reminder for matching projects.
+- **In-Place Note Peeking**: Tap **Peek Full Note** to inspect full decisions and transcripts in a modal without stopping or disrupting the active recording.
+- **Context Pinning**: Pin relevant past context directly into the current session; the final generated notes automatically reference and link prior discussions.
+
 ---
 
 ## 🔑 Abstracted API Configuration
