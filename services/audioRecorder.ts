@@ -56,8 +56,14 @@ class AudioRecordingService {
   private fallbackInterval: ReturnType<typeof setInterval> | null = null;
   private startTime = 0;
   private webMediaRecorder: any = null;
+  private webStream: any = null;
   private webAudioChunks: Blob[] = [];
   private webAudioUrl: string | null = null;
+  private lastRecordedBlob: Blob | null = null;
+
+  getLastRecordedBlob(): Blob | null {
+    return this.lastRecordedBlob;
+  }
 
   /**
    * Request microphone recording permissions.
@@ -120,6 +126,7 @@ class AudioRecordingService {
       if (Platform.OS === 'web' && typeof navigator !== 'undefined' && navigator.mediaDevices?.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          this.webStream = stream;
           this.webAudioChunks = [];
           const mimeType = (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported('audio/webm'))
             ? 'audio/webm'
@@ -134,8 +141,11 @@ class AudioRecordingService {
 
           this.webMediaRecorder.onstop = () => {
             const blob = new Blob(this.webAudioChunks, { type: mimeType });
+            this.lastRecordedBlob = blob;
             this.webAudioUrl = URL.createObjectURL(blob);
-            stream.getTracks().forEach((t) => t.stop());
+            try {
+              stream.getTracks().forEach((t) => t.stop());
+            } catch {}
           };
 
           this.webMediaRecorder.start(250);
@@ -253,9 +263,23 @@ class AudioRecordingService {
 
     try {
       if (this.webMediaRecorder && this.webMediaRecorder.state !== 'inactive') {
-        this.webMediaRecorder.stop();
-        // Give short delay for onstop blob creation
-        await new Promise((r) => setTimeout(r, 120));
+        await new Promise<void>((resolve) => {
+          this.webMediaRecorder.onstop = () => {
+            const mimeType = this.webMediaRecorder?.mimeType || 'audio/webm';
+            const blob = new Blob(this.webAudioChunks, { type: mimeType });
+            this.lastRecordedBlob = blob;
+            this.webAudioUrl = URL.createObjectURL(blob);
+            try {
+              if (this.webStream) {
+                this.webStream.getTracks().forEach((t: any) => t.stop());
+                this.webStream = null;
+              }
+            } catch {}
+            resolve();
+          };
+          this.webMediaRecorder.stop();
+        });
+
         if (this.webAudioUrl) {
           return this.webAudioUrl;
         }

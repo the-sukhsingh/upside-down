@@ -208,6 +208,7 @@ export default function RecordScreen() {
           meetingTitle,
           groqLlmModel: settings.groqLlmModel,
           sarvamLlmModel: settings.sarvamLlmModel,
+          segments: transcriptionResult.segments,
           onProgress: (stage, percent) => {
             setProcessingState({
               currentStage: 'summarizing',
@@ -225,6 +226,7 @@ export default function RecordScreen() {
         transcript: transcriptionResult.fullTranscript,
         transcriptSegments: transcriptionResult.segments,
         summary: noteResult.summary,
+        commitments: noteResult.commitments,
         notes: noteResult.notes,
         tags: noteResult.tags,
       };
@@ -234,6 +236,7 @@ export default function RecordScreen() {
         transcript: transcriptionResult.fullTranscript,
         transcriptSegments: transcriptionResult.segments,
         summary: noteResult.summary,
+        commitments: noteResult.commitments,
         notes: noteResult.notes,
         tags: noteResult.tags,
       });

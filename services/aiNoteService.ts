@@ -1,4 +1,12 @@
-import { ActionItem, MeetingSummary, ProcessingEngine } from '@/types/meeting';
+import {
+  ActionItem,
+  MeetingSummary,
+  ProcessingEngine,
+  Commitment,
+  KeyDecisionItem,
+  TranscriptSegment,
+  EvidenceCitation,
+} from '@/types/meeting';
 import { getGroqApiKey, getSarvamApiKey } from '@/constants/ApiConfig';
 
 export interface AINoteProgressCallback {
@@ -9,6 +17,7 @@ export interface AINoteResult {
   summary: MeetingSummary;
   notes: string;
   tags: string[];
+  commitments: Commitment[];
   modelUsed: string;
   provider: ProcessingEngine;
   inferenceTimeMs: number;
@@ -18,13 +27,37 @@ const NOTE_GENERATION_JSON_SCHEMA = `Analyze the meeting transcript and return a
 {
   "executiveSummary": "Concise paragraph synthesizing what occurred, key background, and outcomes",
   "keyTopics": ["Topic 1", "Topic 2", "Topic 3"],
-  "keyDecisions": ["Decision 1 agreed by the team", "Decision 2 confirmed"],
+  "keyDecisions": [
+    {
+      "decision": "Clear statement of decision agreed upon",
+      "startTime": 45,
+      "endTime": 60,
+      "quote": "Short exact sentence said in audio"
+    }
+  ],
   "actionItems": [
     {
       "task": "Specific actionable task description",
       "assignee": "Person, team, or 'Team'",
       "priority": "high" | "medium" | "low",
-      "category": "Engineering" | "Design" | "Product" | "DevOps" | "General"
+      "category": "Engineering" | "Design" | "Product" | "DevOps" | "General",
+      "dueDate": "e.g. 2026-11-06 or 'By Friday'",
+      "startTime": 90,
+      "endTime": 110,
+      "quote": "Short exact sentence said in audio"
+    }
+  ],
+  "commitments": [
+    {
+      "speaker": "Person who made the promise (e.g. Alex, Sarah, Me)",
+      "person": "Who the promise was made to (e.g. Connor, Team, Client)",
+      "promise": "Exact deliverable promised (e.g. Send the updated architecture deck)",
+      "direction": "i_owe" | "they_owe_me",
+      "deadlinePhrase": "e.g. by Friday 5 PM, tomorrow morning, next week",
+      "dueDate": "YYYY-MM-DD or reasonable date string",
+      "startTime": 120,
+      "endTime": 135,
+      "quote": "Exact spoken promise"
     }
   ],
   "followUps": ["Next step 1", "Next step 2"],
@@ -34,95 +67,222 @@ const NOTE_GENERATION_JSON_SCHEMA = `Analyze the meeting transcript and return a
 /**
  * AI Note Generation Service
  * Synthesizes meeting transcript into structured notes, executive summaries,
- * key decisions, and actionable task checklists with assignees and priorities.
- * Powered by:
- * 1. Groq Chat API (Llama 3.3 70B, Llama 3.1 8B, Gemma 2 9B)
- * 2. Sarvam AI Chat API (Sarvam-105B, Sarvam-105B-Conversations)
+ * key decisions, conversation evidence links, and Promise Radar commitments.
+ * Powered directly by Groq and Sarvam AI APIs.
  */
 class AINoteService {
   /**
+   * Resolves the requested Groq model to a verified active model.
+   */
+  private resolveGroqModel(modelId: string): string {
+    if (!modelId || modelId.includes('llama')) {
+      return 'openai/gpt-oss-120b';
+    }
+    return modelId;
+  }
+
+  /**
+   * Correlates an item with exact recording timestamp evidence.
+   */
+  private findEvidence(
+    quote?: string,
+    startTime?: number,
+    endTime?: number,
+    segments?: TranscriptSegment[]
+  ): EvidenceCitation | undefined {
+    if (startTime !== undefined && startTime >= 0) {
+      return {
+        startTime: Math.floor(startTime),
+        endTime: Math.max(Math.floor(startTime) + 4, Math.ceil(endTime || startTime + 4)),
+        quote: quote?.trim(),
+      };
+    }
+
+    if (!quote || !segments || segments.length === 0) {
+      return undefined;
+    }
+
+    const lowerQuote = quote.toLowerCase().slice(0, 35);
+    const matchingSeg = segments.find((s) => s.text.toLowerCase().includes(lowerQuote));
+    if (matchingSeg) {
+      return {
+        startTime: matchingSeg.startTime,
+        endTime: matchingSeg.endTime,
+        quote: quote.trim(),
+      };
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Normalizes parsed model JSON into strongly typed summary structures.
+   */
+  private processModelOutput(
+    parsed: any,
+    meetingTitle: string,
+    providerName: string,
+    segments?: TranscriptSegment[]
+  ): { summary: MeetingSummary; notes: string; tags: string[]; commitments: Commitment[] } {
+    const rawDecisions = parsed.keyDecisions || [];
+    const structuredDecisions: KeyDecisionItem[] = rawDecisions.map((d: any, idx: number) => {
+      const decisionText = typeof d === 'string' ? d : d.decision || String(d);
+      const evidence = this.findEvidence(
+        typeof d === 'object' ? d.quote : undefined,
+        typeof d === 'object' ? d.startTime : undefined,
+        typeof d === 'object' ? d.endTime : undefined,
+        segments
+      );
+      return {
+        id: `dec-${Date.now()}-${idx}`,
+        decision: decisionText,
+        evidence,
+      };
+    });
+
+    const keyDecisions = structuredDecisions.map((d) => d.decision);
+
+    const actionItems: ActionItem[] = (parsed.actionItems || []).map((a: any, idx: number) => {
+      const evidence = this.findEvidence(a.quote, a.startTime, a.endTime, segments);
+      return {
+        id: `act-${Date.now()}-${idx}`,
+        task: a.task || 'Action task',
+        assignee: a.assignee || 'Team',
+        done: false,
+        priority: (a.priority || 'medium').toLowerCase() as any,
+        dueDate: a.dueDate || 'Next sync',
+        category: a.category || 'General',
+        evidence,
+      };
+    });
+
+    const commitments: Commitment[] = (parsed.commitments || []).map((c: any, idx: number) => {
+      const evidence = this.findEvidence(c.quote, c.startTime, c.endTime, segments);
+      const direction = c.direction === 'they_owe_me' ? 'they_owe_me' : 'i_owe';
+      return {
+        id: `com-${Date.now()}-${idx}`,
+        meetingTitle,
+        speaker: c.speaker || (direction === 'i_owe' ? 'Me' : 'Speaker'),
+        person: c.person || 'Team',
+        promise: c.promise || 'Follow up on promised deliverable',
+        direction,
+        deadlinePhrase: c.deadlinePhrase || c.dueDate || 'Soon',
+        dueDate: c.dueDate || undefined,
+        status: 'pending',
+        completed: false,
+        evidence,
+        createdAt: new Date().toISOString(),
+      };
+    });
+
+    const summary: MeetingSummary = {
+      executiveSummary:
+        parsed.executiveSummary || `Executive synthesis for "${meetingTitle}" generated via ${providerName}.`,
+      keyTopics: parsed.keyTopics || [],
+      keyDecisions,
+      structuredDecisions,
+      actionItems,
+      commitments,
+      followUps: parsed.followUps || [],
+    };
+
+    const notes = this.formatMarkdown(meetingTitle, summary);
+    const tags = parsed.tags || [providerName, 'AI Notes'];
+
+    return { summary, notes, tags, commitments };
+  }
+
+  /**
    * Calls Groq Chat Completions endpoint.
-   * https://api.groq.com/openai/v1/chat/completions
    */
   async generateWithGroqLLM(
     transcript: string,
     meetingTitle: string,
     apiKey: string,
-    modelId: string = 'llama-3.3-70b-versatile',
+    modelId: string = 'openai/gpt-oss-120b',
+    segments?: TranscriptSegment[],
     onProgress?: AINoteProgressCallback
-  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[] }> {
-    onProgress?.(`Connecting to Groq AI (${modelId})...`, 25);
+  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[]; commitments: Commitment[] }> {
+    const effectiveModel = this.resolveGroqModel(modelId);
+    onProgress?.(`Connecting to Groq AI (${effectiveModel})...`, 25);
 
-    const systemPrompt = `You are a world-class executive assistant and technical scribe. Your job is to extract actionable meeting intelligence from transcripts. ${NOTE_GENERATION_JSON_SCHEMA}`;
-    const userPrompt = `Meeting Title: "${meetingTitle}"\n\nTranscript:\n${transcript}\n\nProduce the structured meeting analysis in JSON now:`;
+    const systemPrompt = `You are an elite executive meeting assistant. Analyze the transcript, extract key decisions, action items, Promise Radar commitments ("I owe" vs "They owe me"), and conversation evidence timestamps. ${NOTE_GENERATION_JSON_SCHEMA}. Respond ONLY with valid JSON.`;
+    const userPrompt = `Meeting Title: "${meetingTitle}"\n\nTranscript with timestamps:\n${transcript}\n\nProduce the structured meeting analysis in JSON:`;
 
-    onProgress?.(`Generating meeting notes with Groq ${modelId}...`, 55);
+    onProgress?.(`Synthesizing meeting intelligence with Groq (${effectiveModel})...`, 55);
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: modelId,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt },
-        ],
-        response_format: { type: 'json_object' },
-        temperature: 0.2,
-        max_tokens: 2048,
-      }),
-    });
+    const attemptFetch = async (targetModel: string) => {
+      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt },
+          ],
+          response_format: { type: 'json_object' },
+          temperature: 0.2,
+        }),
+      });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Groq LLM error (${response.status}): ${err}`);
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`Groq LLM error (${response.status}): ${err}`);
+      }
+
+      return response;
+    };
+
+    let response: Response;
+    try {
+      response = await attemptFetch(effectiveModel);
+    } catch (primaryErr: any) {
+      if (effectiveModel !== 'qwen/qwen3.8-27b') {
+        console.warn(`Groq ${effectiveModel} notice, attempting fallback to qwen/qwen3.8-27b...`, primaryErr);
+        onProgress?.('Attempting Groq high-speed fallback model (qwen/qwen3.8-27b)...', 65);
+        response = await attemptFetch('qwen/qwen3.8-27b');
+      } else {
+        throw primaryErr;
+      }
     }
 
     onProgress?.('Parsing Groq structured note response...', 85);
     const data = await response.json();
     const rawContent = data.choices?.[0]?.message?.content || '{}';
-    const parsed = JSON.parse(rawContent);
 
-    const summary: MeetingSummary = {
-      executiveSummary:
-        parsed.executiveSummary || `Executive synthesis for "${meetingTitle}" generated via Groq.`,
-      keyTopics: parsed.keyTopics || [],
-      keyDecisions: parsed.keyDecisions || [],
-      actionItems: (parsed.actionItems || []).map((a: any, idx: number) => ({
-        id: `act-groq-${Date.now()}-${idx}`,
-        task: a.task || 'Action task',
-        assignee: a.assignee || 'Team',
-        done: false,
-        priority: a.priority || 'medium',
-        dueDate: 'Next sync',
-        category: a.category || 'General',
-      })),
-      followUps: parsed.followUps || [],
-    };
+    let parsed: any = {};
+    try {
+      parsed = JSON.parse(rawContent);
+    } catch {
+      const match = rawContent.match(/\{[\s\S]*\}/);
+      if (match) {
+        parsed = JSON.parse(match[0]);
+      } else {
+        throw new Error(`Invalid JSON received from Groq: ${rawContent.slice(0, 150)}`);
+      }
+    }
 
-    const notes = this.formatMarkdown(meetingTitle, summary);
-    const tags = parsed.tags || ['Groq', 'AI Notes'];
-
-    return { summary, notes, tags };
+    return this.processModelOutput(parsed, meetingTitle, 'Groq', segments);
   }
 
   /**
    * Calls Sarvam AI Chat Completions endpoint.
-   * https://api.sarvam.ai/v1/chat/completions
    */
   async generateWithSarvamLLM(
     transcript: string,
     meetingTitle: string,
     apiKey: string,
     modelId: string = 'sarvam-105b',
+    segments?: TranscriptSegment[],
     onProgress?: AINoteProgressCallback
-  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[] }> {
+  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[]; commitments: Commitment[] }> {
     onProgress?.(`Connecting to Sarvam AI (${modelId})...`, 25);
 
-    const systemPrompt = `You are an expert meeting summarizer. ${NOTE_GENERATION_JSON_SCHEMA}. Respond ONLY with valid JSON.`;
+    const systemPrompt = `You are an expert meeting summarizer. Extract decisions, action items, commitments ("I owe" vs "They owe me"), and evidence timestamps. ${NOTE_GENERATION_JSON_SCHEMA}. Respond ONLY with valid JSON.`;
     const userPrompt = `Meeting Title: "${meetingTitle}"\n\nTranscript:\n${transcript}\n\nProduce the structured JSON analysis:`;
 
     onProgress?.(`Synthesizing meeting with Sarvam ${modelId}...`, 55);
@@ -140,7 +300,7 @@ class AINoteService {
           { role: 'user', content: userPrompt },
         ],
         temperature: 0.2,
-        max_tokens: 2048,
+        max_tokens: 3500,
       }),
     });
 
@@ -153,30 +313,15 @@ class AINoteService {
     const data = await response.json();
     const rawContent = data.choices?.[0]?.message?.content || '{}';
 
-    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
-    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(rawContent);
+    let parsed: any = {};
+    try {
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(rawContent);
+    } catch {
+      throw new Error(`Invalid JSON received from Sarvam: ${rawContent.slice(0, 150)}`);
+    }
 
-    const summary: MeetingSummary = {
-      executiveSummary:
-        parsed.executiveSummary || `Executive synthesis for "${meetingTitle}" generated via Sarvam AI.`,
-      keyTopics: parsed.keyTopics || [],
-      keyDecisions: parsed.keyDecisions || [],
-      actionItems: (parsed.actionItems || []).map((a: any, idx: number) => ({
-        id: `act-sarvam-${Date.now()}-${idx}`,
-        task: a.task || 'Action task',
-        assignee: a.assignee || 'Team',
-        done: false,
-        priority: a.priority || 'medium',
-        dueDate: 'Next sync',
-        category: a.category || 'General',
-      })),
-      followUps: parsed.followUps || [],
-    };
-
-    const notes = this.formatMarkdown(meetingTitle, summary);
-    const tags = parsed.tags || ['Sarvam', 'AI Notes'];
-
-    return { summary, notes, tags };
+    return this.processModelOutput(parsed, meetingTitle, 'Sarvam AI', segments);
   }
 
   /**
@@ -189,6 +334,7 @@ class AINoteService {
       meetingTitle?: string;
       groqLlmModel?: string;
       sarvamLlmModel?: string;
+      segments?: TranscriptSegment[];
       onProgress?: AINoteProgressCallback;
     } = {}
   ): Promise<AINoteResult> {
@@ -196,8 +342,9 @@ class AINoteService {
     const {
       provider = 'groq',
       meetingTitle = 'Recorded Meeting',
-      groqLlmModel = 'llama-3.3-70b-versatile',
+      groqLlmModel = 'openai/gpt-oss-120b',
       sarvamLlmModel = 'sarvam-105b',
+      segments,
       onProgress,
     } = options;
 
@@ -206,241 +353,56 @@ class AINoteService {
 
     // 1. Groq LLM Route
     if (provider === 'groq') {
-      if (groqKey) {
-        try {
-          const groqResult = await this.generateWithGroqLLM(
-            transcript,
-            meetingTitle,
-            groqKey,
-            groqLlmModel,
-            onProgress
-          );
-          onProgress?.('Complete.', 100);
-          return {
-            ...groqResult,
-            modelUsed: `Groq (${groqLlmModel})`,
-            provider: 'groq',
-            inferenceTimeMs: Date.now() - startTime,
-          };
-        } catch (groqErr) {
-          console.warn('Groq LLM API notice:', groqErr);
-          onProgress?.('Groq request notice. Generating contextual notes...', 40);
-        }
-      } else {
-        onProgress?.('Groq API Key ready in ApiConfig.ts...', 30);
+      if (!groqKey) {
+        throw new Error('Groq API Key is not configured. Please check constants/ApiConfig.ts');
       }
+      const effectiveGroqModel = this.resolveGroqModel(groqLlmModel);
+      const groqResult = await this.generateWithGroqLLM(
+        transcript,
+        meetingTitle,
+        groqKey,
+        effectiveGroqModel,
+        segments,
+        onProgress
+      );
+      onProgress?.('Complete.', 100);
+      return {
+        ...groqResult,
+        modelUsed: `Groq (${effectiveGroqModel})`,
+        provider: 'groq',
+        inferenceTimeMs: Date.now() - startTime,
+      };
     }
 
     // 2. Sarvam AI LLM Route
     if (provider === 'sarvam') {
-      if (sarvamKey) {
-        try {
-          const sarvamResult = await this.generateWithSarvamLLM(
-            transcript,
-            meetingTitle,
-            sarvamKey,
-            sarvamLlmModel,
-            onProgress
-          );
-          onProgress?.('Complete.', 100);
-          return {
-            ...sarvamResult,
-            modelUsed: `Sarvam AI (${sarvamLlmModel})`,
-            provider: 'sarvam',
-            inferenceTimeMs: Date.now() - startTime,
-          };
-        } catch (sarvamErr) {
-          console.warn('Sarvam LLM API notice:', sarvamErr);
-          onProgress?.('Sarvam request notice. Generating contextual notes...', 40);
-        }
-      } else {
-        onProgress?.('Sarvam API Key ready in ApiConfig.ts...', 30);
+      if (!sarvamKey) {
+        throw new Error('Sarvam API Key is not configured. Please check constants/ApiConfig.ts');
       }
+      const sarvamResult = await this.generateWithSarvamLLM(
+        transcript,
+        meetingTitle,
+        sarvamKey,
+        sarvamLlmModel,
+        segments,
+        onProgress
+      );
+      onProgress?.('Complete.', 100);
+      return {
+        ...sarvamResult,
+        modelUsed: `Sarvam AI (${sarvamLlmModel})`,
+        provider: 'sarvam',
+        inferenceTimeMs: Date.now() - startTime,
+      };
     }
 
-    // Graceful fallback during setup
-    onProgress?.('Extracting strategic decisions and action items...', 50);
-    await new Promise((r) => setTimeout(r, 200));
-
-    onProgress?.('Formatting structured markdown notes and tags...', 85);
-    await new Promise((r) => setTimeout(r, 160));
-
-    const parsed = this.parseTranscriptToNotes(transcript, meetingTitle);
-    onProgress?.('Notes generated successfully.', 100);
-
-    return {
-      summary: parsed.summary,
-      notes: parsed.markdownNotes,
-      tags: parsed.tags,
-      modelUsed: provider === 'groq' ? `Groq (${groqLlmModel})` : `Sarvam (${sarvamLlmModel})`,
-      provider,
-      inferenceTimeMs: Date.now() - startTime,
-    };
+    throw new Error(`Unsupported AI note provider: ${provider}`);
   }
 
-  private parseTranscriptToNotes(
-    rawTranscript: string,
-    meetingTitle: string
-  ): {
-    summary: MeetingSummary;
-    markdownNotes: string;
-    tags: string[];
-  } {
-    const transcript = (rawTranscript || '').trim();
-
-    const sentences = transcript
-      .split(/(?<=[.?!])\s+|\n+/)
-      .map((s) => s.replace(/^\[.*?\]:\s*/, '').trim())
-      .filter((s) => s.length > 3);
-
-    const keyDecisions: string[] = [];
-    const keyTopics: string[] = [];
-
-    sentences.forEach((sentence) => {
-      const lower = sentence.toLowerCase();
-      if (
-        lower.includes('agreed') ||
-        lower.includes('decided') ||
-        lower.includes('decision') ||
-        lower.includes('selected') ||
-        lower.includes('confirmed') ||
-        lower.includes('approved') ||
-        lower.includes('concluded') ||
-        lower.includes('resolved')
-      ) {
-        keyDecisions.push(sentence.charAt(0).toUpperCase() + sentence.slice(1));
-      }
-
-      if (
-        lower.includes('topic') ||
-        lower.includes('reviewing') ||
-        lower.includes('objective') ||
-        lower.includes('discussing') ||
-        lower.includes('focus')
-      ) {
-        keyTopics.push(sentence.charAt(0).toUpperCase() + sentence.slice(1));
-      }
-    });
-
-    if (keyDecisions.length === 0) {
-      keyDecisions.push(`Agreed on core architecture and operational flow for "${meetingTitle}".`);
-      keyDecisions.push('Decided to integrate Groq and Sarvam API endpoints for sub-second performance.');
-    }
-
-    if (keyTopics.length === 0) {
-      keyTopics.push(`Core meeting objectives and timeline for ${meetingTitle}`);
-      keyTopics.push('Cloud transcription and AI synthesis pipeline');
-    }
-
-    const actionItems: ActionItem[] = [];
-    const nameRegex = /\b(alex|sarah|connor|emily|david|chen|priya|arjun|team|qa|engineering|devops|design|frontend|backend|me|i)\b/i;
-
-    sentences.forEach((sentence, idx) => {
-      const lower = sentence.toLowerCase();
-      const hasAction =
-        lower.includes('action item') ||
-        lower.includes('will') ||
-        lower.includes('need to') ||
-        lower.includes('have to') ||
-        lower.includes('should') ||
-        lower.includes('follow up') ||
-        lower.includes('todo') ||
-        lower.includes('test') ||
-        lower.includes('deploy') ||
-        lower.includes('review') ||
-        lower.includes('deliver') ||
-        lower.includes('finalize');
-
-      if (hasAction) {
-        let assignee = 'Team';
-        const match = sentence.match(nameRegex);
-        if (match) {
-          const rawName = match[0].toLowerCase();
-          if (rawName === 'team') assignee = 'Team';
-          else if (rawName === 'qa') assignee = 'QA Team';
-          else if (rawName === 'devops') assignee = 'DevOps';
-          else if (rawName === 'frontend') assignee = 'Frontend';
-          else if (rawName === 'backend') assignee = 'Backend';
-          else if (rawName === 'design') assignee = 'Design';
-          else if (rawName === 'i' || rawName === 'me') assignee = 'Me';
-          else assignee = match[0].charAt(0).toUpperCase() + match[0].slice(1).toLowerCase();
-        }
-
-        let priority: 'high' | 'medium' | 'low' = 'medium';
-        if (lower.includes('today') || lower.includes('urgent') || lower.includes('high priority') || lower.includes('blocker')) {
-          priority = 'high';
-        } else if (lower.includes('later') || lower.includes('low priority') || lower.includes('nice to have')) {
-          priority = 'low';
-        }
-
-        let category = 'Engineering';
-        if (lower.includes('design') || lower.includes('ui') || lower.includes('ux') || lower.includes('tokens')) {
-          category = 'Design';
-        } else if (lower.includes('deploy') || lower.includes('server') || lower.includes('build')) {
-          category = 'DevOps';
-        } else if (lower.includes('review') || lower.includes('roadmap') || lower.includes('spec')) {
-          category = 'Product';
-        }
-
-        let taskText = sentence
-          .replace(/^(action item:?\s*|action item for\s+\w+:?\s*)/i, '')
-          .replace(/^and\s+/i, '')
-          .trim();
-        taskText = taskText.charAt(0).toUpperCase() + taskText.slice(1);
-
-        actionItems.push({
-          id: `act-${Date.now()}-${idx}`,
-          task: taskText,
-          assignee,
-          done: false,
-          priority,
-          dueDate: 'By next sync',
-          category,
-        });
-      }
-    });
-
-    if (actionItems.length === 0) {
-      actionItems.push({
-        id: `act-${Date.now()}-1`,
-        task: `Review transcribed discussion and verify next steps for "${meetingTitle}"`,
-        assignee: 'Team',
-        done: false,
-        priority: 'high',
-        dueDate: 'Today',
-        category: 'General',
-      });
-      actionItems.push({
-        id: `act-${Date.now()}-2`,
-        task: 'Confirm action item owners and track progress in notes',
-        assignee: 'Me',
-        done: false,
-        priority: 'medium',
-        dueDate: 'This week',
-        category: 'Follow-up',
-      });
-    }
-
-    const executiveSummary =
-      sentences.length > 0
-        ? `During "${meetingTitle}", the team reviewed primary priorities, technical architecture, and execution timelines. ${keyDecisions[0] || ''} Action items were assigned across members to ensure rapid delivery with full accountability.`
-        : `Summary of discussion for "${meetingTitle}". Key agreements and actionable items recorded with on-device AI synthesis.`;
-
-    const summary: MeetingSummary = {
-      executiveSummary,
-      keyTopics: keyTopics.slice(0, 3),
-      keyDecisions: keyDecisions.slice(0, 4),
-      actionItems: actionItems.slice(0, 5),
-      followUps: [
-        'Review progress on action items during next sync',
-        'Share notes with stakeholders',
-      ],
-    };
-
-    const markdownNotes = this.formatMarkdown(meetingTitle, summary);
-    const tags = ['Meeting', 'Action Items', 'Cloud AI'];
-
-    return { summary, markdownNotes, tags };
+  private formatTime(secs: number): string {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
   }
 
   private formatMarkdown(title: string, summary: MeetingSummary): string {
@@ -450,6 +412,60 @@ class AINoteService {
       year: 'numeric',
     });
 
+    const structuredDecs = summary.structuredDecisions || [];
+    const decisionsText =
+      structuredDecs.length > 0
+        ? structuredDecs
+            .map((d) => {
+              const evidenceTag = d.evidence ? ` *[🔊 ${this.formatTime(d.evidence.startTime)}]*` : '';
+              return `- **Decision:** ${d.decision}${evidenceTag}`;
+            })
+            .join('\n')
+        : (summary.keyDecisions || []).length > 0
+        ? summary.keyDecisions.map((d) => `- **Decision:** ${d}`).join('\n')
+        : '- *No explicit decisions recorded.*';
+
+    const actionItemsText =
+      (summary.actionItems || []).length > 0
+        ? summary.actionItems
+            .map((a) => {
+              const evidenceTag = a.evidence ? ` *[🔊 ${this.formatTime(a.evidence.startTime)}]*` : '';
+              return `- [ ] **${a.task}**${evidenceTag}\n  *Assignee:* ${a.assignee || 'Unassigned'} | *Priority:* ${a.priority?.toUpperCase()} | *Category:* ${a.category || 'General'} | *Due:* ${a.dueDate || 'Next sync'}`;
+            })
+            .join('\n')
+        : '- *No pending action items.*';
+
+    // Commitments / Promise Radar
+    const commitments = summary.commitments || [];
+    const iOwe = commitments.filter((c) => c.direction === 'i_owe');
+    const theyOweMe = commitments.filter((c) => c.direction === 'they_owe_me');
+
+    const iOweText =
+      iOwe.length > 0
+        ? iOwe
+            .map((c) => {
+              const evidenceTag = c.evidence ? ` *[🔊 ${this.formatTime(c.evidence.startTime)}]*` : '';
+              return `- [ ] **I owe ${c.person}:** ${c.promise} (${c.deadlinePhrase || 'Soon'})${evidenceTag}`;
+            })
+            .join('\n')
+        : '- *No outgoing commitments pending.*';
+
+    const theyOweText =
+      theyOweMe.length > 0
+        ? theyOweMe
+            .map((c) => {
+              const evidenceTag = c.evidence ? ` *[🔊 ${this.formatTime(c.evidence.startTime)}]*` : '';
+              return `- [ ] **${c.speaker} owes me:** ${c.promise} (${c.deadlinePhrase || 'Soon'})${evidenceTag}`;
+            })
+            .join('\n')
+        : '- *No incoming commitments pending.*';
+
+    const followUpsList = summary.followUps || [];
+    const followUpsText =
+      followUpsList.length > 0
+        ? followUpsList.map((f) => `- ${f}`).join('\n')
+        : '- *Review during next sync.*';
+
     return `# ${title}
 *Date: ${today}*
 
@@ -457,18 +473,20 @@ class AINoteService {
 ${summary.executiveSummary}
 
 ## Key Decisions
-${summary.keyDecisions.map((d) => `- **Decision:** ${d}`).join('\n')}
+${decisionsText}
 
 ## Action Items
-${summary.actionItems
-  .map(
-    (a) =>
-      `- [ ] **${a.task}**\n  *Assignee:* ${a.assignee || 'Unassigned'} | *Priority:* ${a.priority?.toUpperCase()} | *Category:* ${a.category || 'General'}`
-  )
-  .join('\n')}
+${actionItemsText}
+
+## Commitment Tracker ("Promise Radar")
+### 📤 I Owe (My Commitments)
+${iOweText}
+
+### 📥 They Owe Me (Incoming Commitments)
+${theyOweText}
 
 ## Next Steps
-${(summary.followUps || ['Follow up on pending checklist items']).map((f) => `- ${f}`).join('\n')}
+${followUpsText}
 `;
   }
 }

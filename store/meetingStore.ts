@@ -6,6 +6,8 @@ import {
   MeetingSummary,
   ActionItem,
   RecordingLifecycleStatus,
+  Commitment,
+  PreMeetingBriefing,
 } from '@/types/meeting';
 
 export interface ProcessingState {
@@ -34,7 +36,7 @@ const INITIAL_SETTINGS: UserSettings = {
 
   // Groq Model Profiles
   groqWhisperModel: 'whisper-large-v3-turbo',
-  groqLlmModel: 'llama-3.3-70b-versatile',
+  groqLlmModel: 'openai/gpt-oss-120b',
 
   // Sarvam Model Profiles
   sarvamSttModel: 'saaras:v4',
@@ -201,9 +203,70 @@ const DEMO_MEETINGS: Meeting[] = [
   },
 ];
 
+const DEMO_COMMITMENTS: Commitment[] = [
+  {
+    id: 'com-demo-1',
+    recordingId: 'rec-demo-1',
+    meetingTitle: 'Sprint 24 Architecture & Note Pipeline Sync',
+    speaker: 'Sarah',
+    person: 'Alex & Team',
+    promise: 'Finish the checklist component and dark mode styles today',
+    direction: 'they_owe_me',
+    dueDate: formatLocalDate(new Date()),
+    deadlinePhrase: 'today',
+    status: 'pending',
+    completed: false,
+    evidence: {
+      startTime: 330,
+      endTime: 345,
+      quote: 'I will finish the checklist component today.',
+    },
+    createdAt: new Date(Date.now() - 3600000 * 3).toISOString(),
+  },
+  {
+    id: 'com-demo-2',
+    recordingId: 'rec-demo-1',
+    meetingTitle: 'Sprint 24 Architecture & Note Pipeline Sync',
+    speaker: 'Me',
+    person: 'Connor',
+    promise: 'Send the Groq Whisper Turbo benchmarking metrics by Friday 5 PM',
+    direction: 'i_owe',
+    dueDate: formatLocalDate(new Date(Date.now() + 86400000 * 3)),
+    deadlinePhrase: 'by Friday 5 PM',
+    status: 'pending',
+    completed: false,
+    evidence: {
+      startTime: 260,
+      endTime: 275,
+      quote: 'I will send the Groq benchmark results by Friday.',
+    },
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+  },
+  {
+    id: 'com-demo-3',
+    recordingId: 'rec-demo-2',
+    meetingTitle: 'Design Critique: Zero-Friction Note Taking Experience',
+    speaker: 'Emily',
+    person: 'Me',
+    promise: 'Deliver updated card layouts with prominent action item checkmarks',
+    direction: 'they_owe_me',
+    dueDate: formatLocalDate(new Date(Date.now() + 86400000 * 2)),
+    deadlinePhrase: 'by Friday',
+    status: 'pending',
+    completed: false,
+    evidence: {
+      startTime: 200,
+      endTime: 215,
+      quote: 'Action item for Emily: deliver updated card layouts by Friday.',
+    },
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
 interface MeetingStoreState {
   meetings: Meeting[];
   recordings: Recording[];
+  commitments: Commitment[];
   settings: UserSettings;
   activeRecording: ActiveRecordingState;
   processingState: ProcessingState;
@@ -221,7 +284,17 @@ interface MeetingStoreState {
   updateRecording: (recordingId: string, updates: Partial<Recording>) => void;
   deleteRecording: (recordingId: string) => void;
   toggleActionItem: (recordingId: string, actionItemId: string) => void;
+  updateActionItem: (recordingId: string, actionItemId: string, updates: Partial<ActionItem>) => void;
   updateRecordingNotes: (recordingId: string, notes: string) => void;
+
+  // Commitment Tracker ("Promise Radar")
+  addCommitment: (commitment: Omit<Commitment, 'id' | 'createdAt'>) => Commitment;
+  toggleCommitment: (id: string) => void;
+  deleteCommitment: (id: string) => void;
+  updateCommitment: (id: string, updates: Partial<Commitment>) => void;
+
+  // Pre-Meeting Briefing
+  setMeetingBriefing: (meetingId: string, briefing: PreMeetingBriefing) => void;
 
   // Processing state
   setProcessingState: (updates: Partial<ProcessingState>) => void;
@@ -242,6 +315,7 @@ interface MeetingStoreState {
 export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
   meetings: DEMO_MEETINGS,
   recordings: DEMO_RECORDINGS,
+  commitments: DEMO_COMMITMENTS,
   settings: INITIAL_SETTINGS,
 
   activeRecording: {
@@ -372,14 +446,33 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
   },
 
   updateRecording: (recordingId, updates) => {
-    set((state) => ({
-      recordings: state.recordings.map((r) => (r.id === recordingId ? { ...r, ...updates } : r)),
-    }));
+    set((state) => {
+      const nextRecordings = state.recordings.map((r) =>
+        r.id === recordingId ? { ...r, ...updates } : r
+      );
+
+      // If new commitments are included in this recording, merge them into the global tracker
+      let nextCommitments = state.commitments;
+      const incomingCommitments = updates.summary?.commitments || updates.commitments;
+      if (incomingCommitments && incomingCommitments.length > 0) {
+        const existingIds = new Set(nextCommitments.map((c) => c.id));
+        const newOnes = incomingCommitments.filter((c) => !existingIds.has(c.id));
+        if (newOnes.length > 0) {
+          nextCommitments = [...newOnes, ...nextCommitments];
+        }
+      }
+
+      return {
+        recordings: nextRecordings,
+        commitments: nextCommitments,
+      };
+    });
   },
 
   deleteRecording: (recordingId) => {
     set((state) => ({
       recordings: state.recordings.filter((r) => r.id !== recordingId),
+      commitments: state.commitments.filter((c) => c.recordingId !== recordingId),
     }));
   },
 
@@ -400,6 +493,77 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
           },
         };
       }),
+    }));
+  },
+
+  updateActionItem: (recordingId, actionItemId, updates) => {
+    set((state) => ({
+      recordings: state.recordings.map((rec) => {
+        if (rec.id !== recordingId || !rec.summary) return rec;
+
+        const updatedActionItems = (rec.summary.actionItems || []).map((item) =>
+          item.id === actionItemId ? { ...item, ...updates } : item
+        );
+
+        return {
+          ...rec,
+          summary: {
+            ...rec.summary,
+            actionItems: updatedActionItems,
+          },
+        };
+      }),
+    }));
+  },
+
+  // Commitment Tracker ("Promise Radar")
+  addCommitment: (data) => {
+    const newCommitment: Commitment = {
+      ...data,
+      id: `com-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      createdAt: new Date().toISOString(),
+    };
+
+    set((state) => ({
+      commitments: [newCommitment, ...state.commitments],
+    }));
+
+    return newCommitment;
+  },
+
+  toggleCommitment: (id) => {
+    set((state) => ({
+      commitments: state.commitments.map((c) => {
+        if (c.id !== id) return c;
+        const willBeDone = !c.completed;
+        return {
+          ...c,
+          completed: willBeDone,
+          status: willBeDone ? 'completed' : 'pending',
+          completedAt: willBeDone ? new Date().toISOString() : undefined,
+        };
+      }),
+    }));
+  },
+
+  deleteCommitment: (id) => {
+    set((state) => ({
+      commitments: state.commitments.filter((c) => c.id !== id),
+    }));
+  },
+
+  updateCommitment: (id, updates) => {
+    set((state) => ({
+      commitments: state.commitments.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+    }));
+  },
+
+  // Pre-Meeting Briefing
+  setMeetingBriefing: (meetingId, briefing) => {
+    set((state) => ({
+      meetings: state.meetings.map((m) =>
+        m.id === meetingId ? { ...m, briefing } : m
+      ),
     }));
   },
 
@@ -469,6 +633,7 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
     set({
       recordings: [],
       meetings: [],
+      commitments: [],
     });
   },
 
@@ -476,6 +641,7 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
     set({
       recordings: DEMO_RECORDINGS,
       meetings: DEMO_MEETINGS,
+      commitments: DEMO_COMMITMENTS,
     });
   },
 }));

@@ -33,7 +33,7 @@ export default function SettingsScreen() {
       title: engine === 'groq' ? 'Groq Turbo Engine Selected' : 'Sarvam AI Engine Selected',
       message:
         engine === 'groq'
-          ? 'Fast inference with Groq Whisper Turbo & Llama 3.3 70B.'
+          ? 'Fast inference with Groq Whisper Turbo & OpenAI GPT-120B / Qwen.'
           : 'Multilingual inference with Sarvam Saaras v4 & Sarvam 105B.',
       duration: 3000,
     });
@@ -130,18 +130,18 @@ export default function SettingsScreen() {
               </View>
 
               <Text style={[styles.engineDescription, { color: colors.textSecondary }]}>
-                Sub-second speech transcription with Whisper Large v3 Turbo, combined with Llama 3.3 70B for fast executive summaries and action items.
+                Sub-second speech transcription with Whisper Large v3 Turbo, combined with OpenAI GPT 120B & Qwen 27B for fast executive summaries and action items.
               </Text>
 
               <View style={styles.engineMetaRow}>
                 <View style={[styles.featurePill, { backgroundColor: colors.surfaceContainer }]}>
                   <Text style={[styles.featurePillText, { color: colors.textSecondary }]}>
-                    ~400ms Transcription
+                    ~400ms Whisper Turbo
                   </Text>
                 </View>
                 <View style={[styles.featurePill, { backgroundColor: colors.surfaceContainer }]}>
                   <Text style={[styles.featurePillText, { color: colors.textSecondary }]}>
-                    Llama 3.3 70B (~500 tok/s)
+                    GPT-120B / Qwen-27B (~500 tok/s)
                   </Text>
                 </View>
               </View>
@@ -246,8 +246,9 @@ export default function SettingsScreen() {
               </Text>
               <View style={styles.choiceChipsRow}>
                 {[
-                  { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (Frontier Quality)' },
-                  { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (Sub-second)' },
+                  { id: 'openai/gpt-oss-120b', label: 'OpenAI GPT 120B (Flagship)' },
+                  { id: 'qwen/qwen3.8-27b', label: 'Qwen 3.8 27B (High-Speed)' },
+                  { id: 'openai/gpt-oss-20b', label: 'OpenAI GPT 20B (Ultra-Fast)' },
                 ].map((m) => {
                   const isSelected = settings.groqLlmModel === m.id;
                   return (

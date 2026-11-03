@@ -1,5 +1,32 @@
 export type MeetingStatus = 'upcoming' | 'in_progress' | 'completed' | 'cancelled';
 
+export interface EvidenceCitation {
+  startTime: number; // in seconds
+  endTime: number; // in seconds
+  quote?: string;
+}
+
+export type CommitmentDirection = 'i_owe' | 'they_owe_me';
+export type CommitmentStatus = 'pending' | 'completed' | 'overdue';
+
+export interface Commitment {
+  id: string;
+  recordingId?: string;
+  meetingTitle?: string;
+  speaker: string; // e.g. "Alex" or "Me"
+  person: string; // the other party
+  promise: string; // "Send the revised architecture deck by Friday"
+  direction: CommitmentDirection; // "i_owe" vs "they_owe_me"
+  dueDate?: string; // e.g. "2026-11-06"
+  deadlinePhrase?: string; // "by Friday 5 PM"
+  status: CommitmentStatus;
+  completed: boolean;
+  completedAt?: string;
+  evidence?: EvidenceCitation;
+  reminderSent?: boolean;
+  createdAt: string;
+}
+
 export interface ActionItem {
   id: string;
   task: string;
@@ -7,7 +34,10 @@ export interface ActionItem {
   done: boolean;
   priority?: 'high' | 'medium' | 'low';
   dueDate?: string;
+  deadlineTimestamp?: string;
   category?: string;
+  evidence?: EvidenceCitation;
+  calendarSynced?: boolean;
 }
 
 export interface TranscriptSegment {
@@ -18,11 +48,19 @@ export interface TranscriptSegment {
   text: string;
 }
 
+export interface KeyDecisionItem {
+  id: string;
+  decision: string;
+  evidence?: EvidenceCitation;
+}
+
 export interface MeetingSummary {
   executiveSummary: string;
   keyTopics?: string[];
   keyDecisions: string[];
+  structuredDecisions?: KeyDecisionItem[];
   actionItems: ActionItem[];
+  commitments?: Commitment[];
   followUps?: string[];
 }
 
@@ -48,8 +86,21 @@ export interface Recording {
   transcript?: string;
   transcriptSegments?: TranscriptSegment[];
   summary?: MeetingSummary;
+  commitments?: Commitment[];
   notes?: string;
   tags?: string[];
+}
+
+export interface PreMeetingBriefing {
+  id: string;
+  meetingId: string;
+  generatedAt: string;
+  headline: string;
+  attentionItems: string[];
+  outstandingTasks: ActionItem[];
+  previousDecisions: string[];
+  unresolvedQuestions: string[];
+  suggestedAgenda: string[];
 }
 
 export interface Meeting {
@@ -65,12 +116,22 @@ export interface Meeting {
   notes?: string;
   status: MeetingStatus;
   recordingIds: string[];
+  briefing?: PreMeetingBriefing;
   createdAt: string;
 }
 
 export type ProcessingEngine = 'groq' | 'sarvam';
 export type TranscriptionProvider = ProcessingEngine;
 export type AIModelProvider = ProcessingEngine;
+
+export type FollowUpTone = 'executive' | 'casual' | 'whatsapp' | 'action_oriented';
+
+export interface FollowUpDraft {
+  tone: FollowUpTone;
+  subject?: string;
+  body: string;
+  channel: 'email' | 'whatsapp';
+}
 
 export interface UserSettings {
   userName: string;
@@ -81,7 +142,7 @@ export interface UserSettings {
 
   // Groq Model Profiles
   groqWhisperModel: 'whisper-large-v3-turbo' | 'whisper-large-v3' | 'distil-whisper-large-v3-en';
-  groqLlmModel: 'llama-3.3-70b-versatile' | 'llama-3.1-8b-instant' | 'gemma2-9b-it' | 'mixtral-8x7b-32768';
+  groqLlmModel: string;
 
   // Sarvam Model Profiles
   sarvamSttModel: 'saaras:v4' | 'saaras:v3';
