@@ -9,6 +9,7 @@ import {
   Commitment,
   PreMeetingBriefing,
   LiveContextMatch,
+  IdeaCollision,
 } from '@/types/meeting';
 
 export interface ProcessingState {
@@ -177,6 +178,170 @@ The design critique established that the user experience must remain focused and
 `,
     tags: ['Design', 'UX', 'AI Notes'],
   },
+  {
+    id: 'rec-seed-game',
+    meetingTitle: 'Game Mechanics & Micro-Progression Loops',
+    uri: 'file:///local/recordings/demo_game_mechanics.wav',
+    durationSeconds: 240,
+    fileSizeBytes: 7680000,
+    createdAt: new Date(Date.now() - 86400000 * 21).toISOString(),
+    status: 'completed',
+    transcript: `[00:00 - Solo Thought]: I was reflecting on why RPG games keep players hooked for hundreds of hours. They never punish early mistakes with catastrophic loss. Instead, games use micro-milestones and variable ratio rewards. Every minor quest grants a small burst of XP, and difficulty scales dynamically so the player stays in flow without feeling defeated.`,
+    summary: {
+      executiveSummary:
+        'Analyzed core game loop psychology: sustaining long-term engagement through progressive micro-rewards, adaptive challenge scaling, and grace mechanics that convert failure into iterative learning.',
+      keyTopics: ['Game progression', 'Variable ratio rewards', 'Flow state psychology', 'Loss aversion'],
+      keyDecisions: [
+        'Frame progress around cumulative mastery points rather than binary win/loss conditions.',
+        'Use unpredictable secondary rewards to reinforce core habit loops.',
+      ],
+      actionItems: [],
+      followUps: ['Explore how RPG quest structures map to non-gaming productivity systems.'],
+    },
+    notes: `# Game Mechanics & Micro-Progression Loops
+*Recorded 3 weeks ago · Solo Voice Reflection*
+
+## Core Principle
+Games sustain engagement by shifting from frequent early rewards to unpredictable mastery challenges. Crucially, a failed attempt never wipes out accumulated progression—players keep their earned equipment and insights.
+`,
+    tags: ['Game Design', 'Psychology', 'Progression Loops'],
+  },
+  {
+    id: 'rec-seed-student',
+    meetingTitle: 'Student Motivation & Autonomous Learning',
+    uri: 'file:///local/recordings/demo_student_motivation.wav',
+    durationSeconds: 310,
+    fileSizeBytes: 9920000,
+    createdAt: new Date(Date.now() - 86400000 * 14).toISOString(),
+    status: 'completed',
+    transcript: `[00:00 - Guest Lecture Notes]: Discussed why conventional grading often destroys intrinsic motivation in learners. When grades are binary pass or fail, students become risk-averse and cheat to protect their GPA. In contrast, scaffolded learning environments reward continuous small steps and offer retake tokens so failure is treated as feedback.`,
+    summary: {
+      executiveSummary:
+        'Observations on education psychology: conventional grading penalizes risk-taking, whereas scaffolded autonomy and retake tokens encourage resilience and self-directed mastery.',
+      keyTopics: ['Student autonomy', 'Intrinsic motivation', 'Growth mindset', 'Low-stakes feedback'],
+      keyDecisions: [
+        'Replace punitive penalties with iterative reflection checkpoints.',
+        'Provide low-stakes practice environments where failure carries zero penalty.',
+      ],
+      actionItems: [],
+      followUps: ['Investigate feedback loops in self-guided learning platforms.'],
+    },
+    notes: `# Student Motivation & Autonomous Learning
+*Recorded 2 weeks ago · Education & Learning Notes*
+
+## Core Principle
+Students thrive when evaluation is continuous and failure is treated as iteration rather than penalty. Scaffolded milestone tokens keep motivation alive.
+`,
+    tags: ['Education', 'Learning Psychology', 'Motivation'],
+  },
+  {
+    id: 'rec-seed-habit',
+    meetingTitle: 'Habit Tracker Retention Breakdown',
+    uri: 'file:///local/recordings/demo_habit_tracker.wav',
+    durationSeconds: 195,
+    fileSizeBytes: 6240000,
+    createdAt: new Date(Date.now() - 86400000 * 4).toISOString(),
+    status: 'completed',
+    transcript: `[00:00 - Product Brainstorm]: Why do 85% of people abandon habit tracking apps by Day 5? The biggest killer is streak anxiety. If you have a 10-day streak and miss Day 11 due to travel, the counter resets to zero. That binary penalty triggers the "what-the-hell" effect where users give up completely.`,
+    summary: {
+      executiveSummary:
+        'Explored the high drop-off rate in personal habit apps: traditional binary streak counters induce catastrophic demotivation upon the first missed day, destroying consistency.',
+      keyTopics: ['Habit tracking friction', 'Streak anxiety', 'User retention drop-off', 'Behavioral design'],
+      keyDecisions: [
+        'Acknowledge that binary streak counters are counter-productive for long-term consistency.',
+        'Design a habit architecture that survives imperfect days.',
+      ],
+      actionItems: [],
+      followUps: ['Design an alternative to standard streak counters.'],
+    },
+    notes: `# Habit Tracker Retention Breakdown
+*Recorded 4 days ago · Product Strategy Sync*
+
+## Core Problem
+Binary streak counters create immense fragile pressure. When users miss a single day, the loss feels final, leading to app abandonment.
+`,
+    tags: ['Product Strategy', 'Habits', 'Behavioral Design'],
+  },
+];
+
+const DEMO_COLLISIONS: IdeaCollision[] = [
+  {
+    id: 'collision-progressive-rewards',
+    title: 'Adaptive Progressive Rewards in Habit Building',
+    sharedMechanism:
+      'Progressive Micro-Rewards & Low-Stakes Calibration (replacing binary pass/fail streaks with game-like incremental mastery tiers).',
+    overlappingConcepts: [
+      'Variable reward schedules',
+      'Low-stakes feedback',
+      'Extrinsic-to-intrinsic transition',
+      'Streak resilience',
+    ],
+    whyUseful:
+      'Directly bridges game design psychology and educational scaffolding into personal productivity. Instead of destroying habit streaks when a day is missed, habits borrow the gaming concept of "shield tokens" and student mastery tiers, keeping the user motivated long-term.',
+    smallExperiment:
+      'Create a 5-day habit test where missing day 3 grants a "Grace Token" and asks for a 30-second reflection instead of resetting the streak count to zero. Track if 80%+ continue to Day 7.',
+    sourceNotes: [
+      {
+        recordingId: 'rec-seed-game',
+        meetingTitle: 'Game Mechanics & Micro-Progression Loops',
+        date: '3 weeks ago',
+        excerptSnippet:
+          'Games sustain engagement by shifting from frequent early rewards to unpredictable mastery challenges without catastrophic loss.',
+      },
+      {
+        recordingId: 'rec-seed-student',
+        meetingTitle: 'Student Motivation & Autonomous Learning',
+        date: '2 weeks ago',
+        excerptSnippet:
+          'Students thrive when evaluation is continuous and failure is treated as iteration rather than penalty.',
+      },
+      {
+        recordingId: 'rec-seed-habit',
+        meetingTitle: 'Habit Tracker Retention Breakdown',
+        date: '4 days ago',
+        excerptSnippet:
+          'Binary streak counters induce catastrophic demotivation on the first missed day, leading to total abandonment.',
+      },
+    ],
+    relevanceScore: 0.94,
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
+    status: 'active',
+  },
+  {
+    id: 'collision-cognitive-decoupling',
+    title: 'Zero-Friction Cognitive Scaffolding in Note Creation',
+    sharedMechanism:
+      'Non-Blocking Cognitive Decoupling (decoupling active live capture from background synthesis so users stay immersed in the moment).',
+    overlappingConcepts: [
+      'Cognitive load reduction',
+      'Asynchronous processing',
+      'Distraction-free focus',
+      'Offline-first reliability',
+    ],
+    whyUseful:
+      'Combines offline-first recording architecture with distraction-free UI so the meeting participant stays 100% engaged in dialogue without watching live transcription artifacts.',
+    smallExperiment:
+      'Compare user sentiment when transcript text is hidden during meetings vs streamed live; measure conversation distraction frequency across 5 test recordings.',
+    sourceNotes: [
+      {
+        recordingId: 'rec-demo-1',
+        meetingTitle: 'Sprint 24 Architecture & Note Pipeline Sync',
+        date: 'Today',
+        excerptSnippet:
+          'Enforce 100% zero live data fetching while recording is active; record locally to guarantee privacy and flow.',
+      },
+      {
+        recordingId: 'rec-demo-2',
+        meetingTitle: 'Design Critique: Zero-Friction Note Taking Experience',
+        date: 'Yesterday',
+        excerptSnippet:
+          'Hide live text streaming during audio recording to preserve conversation focus and eliminate distraction.',
+      },
+    ],
+    relevanceScore: 0.89,
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
+    status: 'active',
+  },
 ];
 
 const DEMO_MEETINGS: Meeting[] = [
@@ -274,6 +439,11 @@ interface MeetingStoreState {
   activeRecording: ActiveRecordingState;
   processingState: ProcessingState;
 
+  // Idea Collision Engine
+  ideaCollisions: IdeaCollision[];
+  dismissedCollisionIds: string[];
+  isCollidingIdeas: boolean;
+
   // Recording actions
   startRecordingSession: (meetingId?: string, meetingTitle?: string) => void;
   pauseRecordingSession: () => void;
@@ -305,6 +475,14 @@ interface MeetingStoreState {
   unpinLiveContext: (contextId: string) => void;
   clearLiveTopics: () => void;
 
+  // Idea Collision Engine actions
+  dismissIdeaCollision: (collisionId: string) => void;
+  saveIdeaCollision: (collisionId: string) => void;
+  setIdeaCollisionExperimenting: (collisionId: string) => void;
+  addIdeaCollision: (collision: IdeaCollision) => void;
+  setIdeaCollisions: (collisions: IdeaCollision[]) => void;
+  setIsCollidingIdeas: (isColliding: boolean) => void;
+
   // Processing state
   setProcessingState: (updates: Partial<ProcessingState>) => void;
   resetProcessingState: () => void;
@@ -326,6 +504,10 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
   recordings: DEMO_RECORDINGS,
   commitments: DEMO_COMMITMENTS,
   settings: INITIAL_SETTINGS,
+
+  ideaCollisions: DEMO_COLLISIONS,
+  dismissedCollisionIds: [],
+  isCollidingIdeas: false,
 
   activeRecording: {
     isRecording: false,
@@ -440,6 +622,43 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
         pinnedContexts: [],
       },
     }));
+  },
+
+  dismissIdeaCollision: (collisionId) => {
+    set((state) => ({
+      dismissedCollisionIds: [...state.dismissedCollisionIds, collisionId],
+      ideaCollisions: state.ideaCollisions.filter((c) => c.id !== collisionId),
+    }));
+  },
+
+  saveIdeaCollision: (collisionId) => {
+    set((state) => ({
+      ideaCollisions: state.ideaCollisions.map((c) =>
+        c.id === collisionId ? { ...c, status: 'saved' as const } : c
+      ),
+    }));
+  },
+
+  setIdeaCollisionExperimenting: (collisionId) => {
+    set((state) => ({
+      ideaCollisions: state.ideaCollisions.map((c) =>
+        c.id === collisionId ? { ...c, status: 'experimenting' as const } : c
+      ),
+    }));
+  },
+
+  addIdeaCollision: (collision) => {
+    set((state) => ({
+      ideaCollisions: [collision, ...state.ideaCollisions.filter((c) => c.id !== collision.id)],
+    }));
+  },
+
+  setIdeaCollisions: (collisions) => {
+    set({ ideaCollisions: collisions });
+  },
+
+  setIsCollidingIdeas: (isColliding) => {
+    set({ isCollidingIdeas: isColliding });
   },
 
   discardRecordingSession: () => {
@@ -697,6 +916,8 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
       recordings: [],
       meetings: [],
       commitments: [],
+      ideaCollisions: [],
+      dismissedCollisionIds: [],
     });
   },
 
@@ -705,6 +926,8 @@ export const useMeetingStore = create<MeetingStoreState>((set, get) => ({
       recordings: DEMO_RECORDINGS,
       meetings: DEMO_MEETINGS,
       commitments: DEMO_COMMITMENTS,
+      ideaCollisions: DEMO_COLLISIONS,
+      dismissedCollisionIds: [],
     });
   },
 }));

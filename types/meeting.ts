@@ -179,3 +179,24 @@ export interface LiveTopicRadarState {
   matchedContexts: LiveContextMatch[];
   pinnedContexts: LiveContextMatch[];
 }
+
+export interface IdeaCollisionSourceNote {
+  recordingId: string;
+  meetingTitle: string;
+  date: string;
+  excerptSnippet: string;
+}
+
+export interface IdeaCollision {
+  id: string;
+  title: string;
+  sharedMechanism: string;
+  overlappingConcepts: string[];
+  whyUseful: string;
+  smallExperiment: string;
+  sourceNotes: IdeaCollisionSourceNote[];
+  relevanceScore: number; // 0.0 - 1.0
+  createdAt: string;
+  status: 'active' | 'saved' | 'dismissed' | 'experimenting';
+}
+
