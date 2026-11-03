@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Animated } from 'react-native';
 import { View } from './Themed';
 import { useColorScheme } from './useColorScheme';
@@ -23,6 +23,11 @@ export function WaveformVisualizer({
     Array.from({ length: barCount }, () => new Animated.Value(6))
   );
 
+  const meterRef = useRef(meterLevel);
+  useEffect(() => {
+    meterRef.current = meterLevel;
+  }, [meterLevel]);
+
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | null = null;
 
@@ -33,7 +38,7 @@ export function WaveformVisualizer({
           // Create natural sound wave curve (higher in middle, lower at edges)
           const centerFactor = 1 - Math.abs(idx - barCount / 2) / (barCount / 2);
           const baseHeight = 8;
-          const variance = Math.random() * 48 * Math.max(0.2, meterLevel) * (0.4 + 0.6 * centerFactor);
+          const variance = Math.random() * 48 * Math.max(0.2, meterRef.current) * (0.4 + 0.6 * centerFactor);
           const targetHeight = Math.min(60, Math.max(6, baseHeight + variance));
 
           Animated.timing(val, {
@@ -57,7 +62,7 @@ export function WaveformVisualizer({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isRecording, isPaused, meterLevel, barCount, animatedValues]);
+  }, [isRecording, isPaused, barCount, animatedValues]);
 
   return (
     <View style={styles.container}>

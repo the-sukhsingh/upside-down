@@ -24,21 +24,21 @@ export interface RecorderStatus {
  */
 export const WHISPER_RECORDING_OPTIONS: RecordingOptions = {
   isMeteringEnabled: true,
-  extension: '.wav',
-  sampleRate: 16000,
+  extension: '.m4a',
+  sampleRate: 44100,
   numberOfChannels: 1,
-  bitRate: 256000,
+  bitRate: 128000,
   android: {
-    extension: '.wav',
-    outputFormat: 'default',
-    audioEncoder: 'default',
-    sampleRate: 16000,
+    extension: '.m4a',
+    outputFormat: 'mpeg4',
+    audioEncoder: 'aac',
+    sampleRate: 44100,
   },
   ios: {
-    extension: '.wav',
-    outputFormat: IOSOutputFormat.LINEARPCM,
+    extension: '.m4a',
+    outputFormat: IOSOutputFormat.MPEG4AAC,
     audioQuality: AudioQuality.MAX,
-    sampleRate: 16000,
+    sampleRate: 44100,
     linearPCMBitDepth: 16,
     linearPCMIsBigEndian: false,
     linearPCMIsFloat: false,
@@ -55,6 +55,7 @@ class AudioRecordingService {
   private statusSubscription: { remove: () => void } | null = null;
   private fallbackInterval: ReturnType<typeof setInterval> | null = null;
   private startTime = 0;
+  private isPaused = false;
   private webMediaRecorder: any = null;
   private webStream: any = null;
   private webAudioChunks: Blob[] = [];
@@ -117,6 +118,7 @@ class AudioRecordingService {
   async startRecording(onStatusUpdate?: (status: RecorderStatus) => void): Promise<boolean> {
     this.statusUpdateCallback = onStatusUpdate || null;
     this.startTime = Date.now();
+    this.isPaused = false;
 
     try {
       await this.requestPermissions();
@@ -161,7 +163,7 @@ class AudioRecordingService {
         this.statusSubscription = recorder.addListener(
           'recordingStatusUpdate',
           (_status: RecordingStatus) => {
-            if (this.statusUpdateCallback && this.recorder) {
+            if (this.statusUpdateCallback && this.recorder && !this.isPaused) {
               try {
                 const state = this.recorder.getStatus();
                 let meterLevel = 0.3;
@@ -189,7 +191,7 @@ class AudioRecordingService {
 
       // Supplementary heartbeat interval to guarantee UI metering and timer responsiveness
       this.fallbackInterval = setInterval(() => {
-        if (this.statusUpdateCallback) {
+        if (this.statusUpdateCallback && !this.isPaused) {
           const elapsed = Date.now() - this.startTime;
           this.statusUpdateCallback({
             isRecording: true,
@@ -198,14 +200,14 @@ class AudioRecordingService {
             metering: 0.25 + Math.random() * 0.45,
           });
         }
-      }, 250);
+      }, 500);
 
       return true;
     } catch (err) {
       console.warn('Audio recorder startup notice, using fallback timer:', err);
 
       this.fallbackInterval = setInterval(() => {
-        if (this.statusUpdateCallback) {
+        if (this.statusUpdateCallback && !this.isPaused) {
           const elapsed = Date.now() - this.startTime;
           this.statusUpdateCallback({
             isRecording: true,
@@ -214,7 +216,7 @@ class AudioRecordingService {
             metering: 0.25 + Math.random() * 0.35,
           });
         }
-      }, 250);
+      }, 500);
 
       return true;
     }
@@ -224,6 +226,7 @@ class AudioRecordingService {
    * Pauses the active recording session.
    */
   async pauseRecording(): Promise<void> {
+    this.isPaused = true;
     try {
       if (this.recorder) {
         this.recorder.pause();
@@ -240,6 +243,7 @@ class AudioRecordingService {
    * Resumes a paused recording session.
    */
   async resumeRecording(): Promise<void> {
+    this.isPaused = false;
     try {
       if (this.recorder) {
         this.recorder.record();
@@ -256,6 +260,7 @@ class AudioRecordingService {
    * Stops the recording session and returns the recorded audio file URI.
    */
   async stopRecording(): Promise<string> {
+    this.isPaused = false;
     if (this.fallbackInterval) {
       clearInterval(this.fallbackInterval);
       this.fallbackInterval = null;
@@ -293,19 +298,22 @@ class AudioRecordingService {
         this.statusSubscription = null;
         this.recorder = null;
 
-        return recordedUri || `file:///local/recordings/meeting_16khz_${Date.now()}.wav`;
+        if (recordedUri) {
+          return recordedUri;
+        }
       }
     } catch (err) {
       console.warn('Audio recorder stop notice:', err);
     }
 
-    return `file:///local/recordings/meeting_16khz_${Date.now()}.wav`;
+    return `file:///local/recordings/meeting_${Date.now()}.m4a`;
   }
 
   /**
    * Cancels and discards the active recording session.
    */
   async cancelRecording(): Promise<void> {
+    this.isPaused = false;
     if (this.fallbackInterval) {
       clearInterval(this.fallbackInterval);
       this.fallbackInterval = null;
@@ -313,11 +321,15 @@ class AudioRecordingService {
 
     try {
       if (this.webMediaRecorder && this.webMediaRecorder.state !== 'inactive') {
-        this.webMediaRecorder.stop();
+        try {
+          this.webMediaRecorder.stop();
+        } catch {}
         this.webMediaRecorder = null;
       }
       if (this.recorder) {
-        await this.recorder.stop();
+        try {
+          await this.recorder.stop();
+        } catch {}
         this.statusSubscription?.remove();
         this.statusSubscription = null;
         this.recorder = null;

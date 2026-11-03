@@ -88,10 +88,13 @@ class TranscriptionService {
     }
 
     // 3. React Native Native (iOS / Android)
+    const ext = audioUri.split('.').pop()?.toLowerCase() || 'm4a';
+    const mimeType = ext === 'wav' ? 'audio/wav' : ext === 'mp4' || ext === 'm4a' ? 'audio/m4a' : 'audio/mpeg';
+    const name = `audio.${ext}`;
     formData.append('file', {
       uri: audioUri,
-      name: 'audio.wav',
-      type: 'audio/wav',
+      name,
+      type: mimeType,
     } as any);
 
     return formData;

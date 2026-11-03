@@ -366,6 +366,7 @@ export function MeetaTabBar({
 
   return (
     <View
+      pointerEvents="box-none"
       style={[
         styles.dockWrapper,
         {

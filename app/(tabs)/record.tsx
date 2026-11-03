@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   Modal,
   Platform,
@@ -51,12 +52,14 @@ export default function RecordScreen() {
   const [meetingPickerOpen, setMeetingPickerOpen] = useState(false);
   const [toast, setToast] = useState<ToastConfig | null>(null);
   const [completedRecording, setCompletedRecording] = useState<Recording | null>(null);
+  const [isActionPending, setIsActionPending] = useState(false);
 
   // High-accuracy wall clock refs to prevent timer drift
   const sessionStartTimeRef = useRef<number | null>(null);
   const pausedDurationRef = useRef<number>(0);
   const lastPausedAtRef = useRef<number | null>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastMeterUpdateRef = useRef<number>(0);
 
   // Sync selectedMeetingId when active recording changes
   useEffect(() => {
@@ -94,78 +97,104 @@ export default function RecordScreen() {
 
   // Handle start recording
   const handleStart = async () => {
-    setCompletedRecording(null);
-    resetProcessingState();
+    if (isActionPending) return;
+    setIsActionPending(true);
 
-    const chosenMeeting = meetings.find((m) => m.id === selectedMeetingId);
-    const meetingTitle = chosenMeeting?.title || 'Meeting Note Session';
+    try {
+      setCompletedRecording(null);
+      resetProcessingState();
 
-    sessionStartTimeRef.current = Date.now();
-    pausedDurationRef.current = 0;
-    lastPausedAtRef.current = null;
+      const chosenMeeting = meetings.find((m) => m.id === selectedMeetingId);
+      const meetingTitle = chosenMeeting?.title || 'Meeting Note Session';
 
-    startRecordingSession(selectedMeetingId, meetingTitle);
-    startTimerTicker();
+      sessionStartTimeRef.current = Date.now();
+      pausedDurationRef.current = 0;
+      lastPausedAtRef.current = null;
+      lastMeterUpdateRef.current = 0;
 
-    // Pure local recording - Zero real-time data fetching
-    await audioRecorder.startRecording((status) => {
-      if (status.metering !== undefined) {
-        updateActiveMeter(status.metering);
-      }
-    });
+      startRecordingSession(selectedMeetingId, meetingTitle);
+      startTimerTicker();
+
+      // Pure local recording - Zero real-time data fetching
+      await audioRecorder.startRecording((status) => {
+        const now = Date.now();
+        // Throttle meter updates to prevent main-thread re-render floods that drop touch events
+        if (status.metering !== undefined && now - lastMeterUpdateRef.current > 350) {
+          lastMeterUpdateRef.current = now;
+          updateActiveMeter(status.metering);
+        }
+      });
+    } finally {
+      setIsActionPending(false);
+    }
   };
 
   // Handle pause recording
   const handlePause = async () => {
-    lastPausedAtRef.current = Date.now();
-    stopTimerTicker();
-    pauseRecordingSession();
-    await audioRecorder.pauseRecording();
+    if (isActionPending) return;
+    setIsActionPending(true);
+    try {
+      lastPausedAtRef.current = Date.now();
+      stopTimerTicker();
+      pauseRecordingSession();
+      await audioRecorder.pauseRecording();
+    } finally {
+      setIsActionPending(false);
+    }
   };
 
   // Handle resume recording
   const handleResume = async () => {
-    if (lastPausedAtRef.current) {
-      pausedDurationRef.current += Date.now() - lastPausedAtRef.current;
-      lastPausedAtRef.current = null;
+    if (isActionPending) return;
+    setIsActionPending(true);
+    try {
+      if (lastPausedAtRef.current) {
+        pausedDurationRef.current += Date.now() - lastPausedAtRef.current;
+        lastPausedAtRef.current = null;
+      }
+      startTimerTicker();
+      resumeRecordingSession();
+      await audioRecorder.resumeRecording();
+    } finally {
+      setIsActionPending(false);
     }
-    startTimerTicker();
-    resumeRecordingSession();
-    await audioRecorder.resumeRecording();
   };
 
   // Handle stop recording -> enters Transcription & AI Note Generation
   const handleStop = async () => {
-    stopTimerTicker();
-    sessionStartTimeRef.current = null;
-    pausedDurationRef.current = 0;
-    lastPausedAtRef.current = null;
-
-    const recordedDuration = activeRecording.elapsedSeconds || 8;
-    const meetingTitle = activeRecording.meetingTitle || 'Meeting Note Session';
-    const meetingId = activeRecording.meetingId;
-
-    // 1. Stop audio recorder and get file URI
-    const audioUri = await audioRecorder.stopRecording();
-
-    // 2. Save base recording entry
-    const newRec = createRecordingEntry(audioUri, meetingTitle, meetingId);
-
-    // 3. Initiate post-recording pipeline: Transcribe -> AI Notes
-    const isGroq = settings.activeEngine === 'groq';
-    const sttLabel = isGroq
-      ? `Groq (${settings.groqWhisperModel})`
-      : `Sarvam AI (${settings.sarvamSttModel})`;
-
-    setProcessingState({
-      isProcessing: true,
-      currentStage: 'transcribing',
-      stageMessage: `Transcribing audio with ${sttLabel}...`,
-      progressPercent: 5,
-      recordingId: newRec.id,
-    });
+    if (isActionPending) return;
+    setIsActionPending(true);
 
     try {
+      stopTimerTicker();
+      sessionStartTimeRef.current = null;
+      pausedDurationRef.current = 0;
+      lastPausedAtRef.current = null;
+
+      const recordedDuration = activeRecording.elapsedSeconds || 8;
+      const meetingTitle = activeRecording.meetingTitle || 'Meeting Note Session';
+      const meetingId = activeRecording.meetingId;
+
+      // 1. Stop audio recorder and get file URI
+      const audioUri = await audioRecorder.stopRecording();
+
+      // 2. Save base recording entry
+      const newRec = createRecordingEntry(audioUri, meetingTitle, meetingId);
+
+      // 3. Initiate post-recording pipeline: Transcribe -> AI Notes
+      const isGroq = settings.activeEngine === 'groq';
+      const sttLabel = isGroq
+        ? `Groq (${settings.groqWhisperModel})`
+        : `Sarvam AI (${settings.sarvamSttModel})`;
+
+      setProcessingState({
+        isProcessing: true,
+        currentStage: 'transcribing',
+        stageMessage: `Transcribing audio with ${sttLabel}...`,
+        progressPercent: 5,
+        recordingId: newRec.id,
+      });
+
       // Step A: Speech-to-Text Transcription via Groq or Sarvam
       const transcriptionResult = await transcriptionService.transcribeAudio(audioUri, {
         provider: settings.activeEngine,
@@ -274,11 +303,36 @@ export default function RecordScreen() {
         message: 'Could not complete AI note synthesis. Recording was saved safely.',
         duration: 4000,
       });
+    } finally {
+      setIsActionPending(false);
     }
   };
 
   // Discard recording
   const handleDiscard = async () => {
+    if (isActionPending) return;
+
+    const performDiscard = async () => {
+      setIsActionPending(true);
+      try {
+        stopTimerTicker();
+        sessionStartTimeRef.current = null;
+        pausedDurationRef.current = 0;
+        lastPausedAtRef.current = null;
+        await audioRecorder.cancelRecording();
+        discardRecordingSession();
+      } finally {
+        setIsActionPending(false);
+      }
+    };
+
+    if (Platform.OS === 'web') {
+      if (typeof window !== 'undefined' && window.confirm('Discard Recording?\n\nAre you sure you want to discard this recording? The audio will not be saved.')) {
+        await performDiscard();
+      }
+      return;
+    }
+
     Alert.alert(
       'Discard Recording?',
       'Are you sure you want to discard this recording? The audio will not be saved.',
@@ -287,14 +341,7 @@ export default function RecordScreen() {
         {
           text: 'Discard',
           style: 'destructive',
-          onPress: async () => {
-            stopTimerTicker();
-            sessionStartTimeRef.current = null;
-            pausedDurationRef.current = 0;
-            lastPausedAtRef.current = null;
-            await audioRecorder.cancelRecording();
-            discardRecordingSession();
-          },
+          onPress: performDiscard,
         },
       ]
     );
@@ -538,35 +585,62 @@ export default function RecordScreen() {
             </View>
 
             <Text style={[styles.recordingHint, { color: colors.textSecondary }]}>
-              Audio is captured locally in 16kHz PCM WAV. No streaming data is sent over the network.
+              Audio is captured locally. No streaming data is sent over the network.
             </Text>
 
             {/* Recording Controls */}
             <View style={styles.controlsRow}>
-              <TouchableOpacity
+              <Pressable
                 onPress={handleDiscard}
-                style={[styles.iconControlBtn, { backgroundColor: colors.surfaceContainer }]}>
+                disabled={isActionPending}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={({ pressed }) => [
+                  styles.iconControlBtn,
+                  {
+                    backgroundColor: colors.surfaceContainer,
+                    opacity: pressed || isActionPending ? 0.6 : 1,
+                  },
+                ]}>
                 <Ionicons name="trash-outline" size={20} color={colors.danger} />
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 onPress={activeRecording.isPaused ? handleResume : handlePause}
-                style={[styles.iconControlBtn, { backgroundColor: colors.surfaceContainer }]}>
+                disabled={isActionPending}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={({ pressed }) => [
+                  styles.iconControlBtn,
+                  {
+                    backgroundColor: colors.surfaceContainer,
+                    opacity: pressed || isActionPending ? 0.6 : 1,
+                  },
+                ]}>
                 <Ionicons
                   name={activeRecording.isPaused ? 'play' : 'pause'}
                   size={20}
                   color={colors.text}
                 />
-              </TouchableOpacity>
+              </Pressable>
 
-              <TouchableOpacity
+              <Pressable
                 onPress={handleStop}
-                style={[styles.stopBtn, { backgroundColor: colors.primary }]}>
-                <Ionicons name="stop" size={20} color={colors.primaryText} />
+                disabled={isActionPending}
+                style={({ pressed }) => [
+                  styles.stopBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: pressed || isActionPending ? 0.75 : 1,
+                  },
+                ]}>
+                {isActionPending ? (
+                  <ActivityIndicator size="small" color={colors.primaryText} />
+                ) : (
+                  <Ionicons name="stop" size={20} color={colors.primaryText} />
+                )}
                 <Text style={[styles.stopBtnText, { color: colors.primaryText }]}>
-                  Stop & Transcribe
+                  {isActionPending ? 'Finishing...' : 'Stop & Transcribe'}
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         )}
@@ -991,16 +1065,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   iconControlBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stopBtn: {
     flex: 1,
-    height: 44,
-    borderRadius: 22,
+    height: 48,
+    borderRadius: 24,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
