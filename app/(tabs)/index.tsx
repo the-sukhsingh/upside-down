@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -10,6 +10,7 @@ import { useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import { useMeetingStore } from '@/store/meetingStore';
 import { PromiseRadarCard } from '@/components/PromiseRadarCard';
+import { DigitalizeNotesModal } from '@/components/DigitalizeNotesModal';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Meeting } from '@/types/meeting';
@@ -19,6 +20,8 @@ export default function HomeScreen() {
   const theme = useColorScheme();
   const colors = Colors[theme];
   const insets = useSafeAreaInsets();
+
+  const [digitalizeModalVisible, setDigitalizeModalVisible] = useState(false);
 
   const {
     meetings,
@@ -307,11 +310,63 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Floating Camera Button (Bottom-Left) */}
+      <TouchableOpacity
+        onPress={() => setDigitalizeModalVisible(true)}
+        style={[
+          styles.floatingCameraFab,
+          {
+            bottom: insets.bottom + 85,
+            backgroundColor: colors.primary,
+            shadowColor: '#000',
+          },
+        ]}
+        activeOpacity={0.82}
+        accessibilityRole="button"
+        accessibilityLabel="Digitalize Meeting Notes via Camera">
+        <Ionicons name="camera" size={24} color={colors.primaryText} />
+        <View style={[styles.fabAiBadge, { backgroundColor: colors.olive }]}>
+          <Ionicons name="sparkles" size={9} color="#FFF" />
+        </View>
+      </TouchableOpacity>
+
+      {/* Digitalize Notes Modal */}
+      <DigitalizeNotesModal
+        visible={digitalizeModalVisible}
+        onClose={() => setDigitalizeModalVisible(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  floatingCameraFab: {
+    position: 'absolute',
+    left: 20,
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    zIndex: 900,
+  },
+  fabAiBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FFF',
+  },
   screen: {
     flex: 1,
   },
