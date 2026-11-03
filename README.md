@@ -1,111 +1,166 @@
-# Meeting Note Taker Application
+# 🎙️ MeetaNotes — AI Meeting Companion & Note Taker
 
-A clean, abstracted meeting companion and AI note taker application built with React Native and Expo Router, powered by **Groq API** and **Sarvam AI API**.
+A fast, privacy-first meeting companion built with **React Native** and **Expo Router**, powered directly by **Groq Cloud API** and **Sarvam AI API**.
+
+Designed around zero-interruption recording: captures local high-fidelity audio without making real-time network requests, transcribing and extracting actionable intelligence only when the meeting concludes.
 
 ---
 
-## 🔑 Providing API Keys
+## 🌟 Highlight Features
 
-API keys are completely abstracted away from the user interface. You can provide your keys in either of two places:
+### 1. 🎯 Commitment Tracker (“Promise Radar”)
+- **Spoken Promise Detection**: Scans transcript dialogue for commitment patterns (e.g., *"I'll send the updated mockups by Friday 5 PM"*).
+- **Direction Ledger**: Organizes commitments into **"I Owe (📤)"** (your team's commitments to others) and **"They Owe Me (📥)"** (promises made to you).
+- **Deadline Radar**: Parses relative deadlines (*"by Friday"*, *"tomorrow morning"*, *"today"*) and flags upcoming or overdue items.
+- **Audio Verification**: Every promise links directly to the original audio evidence.
+
+### 2. 🔊 Conversation Evidence Links
+- **Zero Blind Trust**: Every AI-generated decision, summary point, and action item is cited with exact recording timestamps.
+- **Instant Audio Seek**: Tapping any timestamp pill (e.g., `[🔊 01:25]`) seeks the player to that exact moment and begins playback.
+- **Context Preview**: Displays the exact quote spoken in conversation alongside the timestamp.
+
+### 3. 📋 Before-You-Meet Briefing
+- **Pre-Meeting Intelligence**: Before entering a scheduled meeting, compiles an executive briefing from prior conversations and notes.
+- **Key Sections**:
+  - **What Needs Attention Today**: Critical blockers and urgent priorities
+  - **Outstanding Tasks Carried Over**: Unresolved action items from prior syncs
+  - **Previous Decisions Confirmed**: Baseline agreements already locked in
+  - **Unresolved Questions to Ask**: Open questions to bring to the table
+  - **Suggested Timed Agenda**: Structured breakdown of the session
+
+### 4. ⚡ Auto Follow-Up Draft
+- **One-Tap Recap Dispatch**: Solves the post-meeting chore by generating ready-to-send messages with action items in seconds.
+- **4 Tone Profiles**:
+  - 👔 **Executive**: Concise, polished, high-level summary for leadership
+  - 💬 **Casual**: Friendly, approachable tone for Slack or Teams
+  - 🟢 **WhatsApp**: Punchy, emoji-spaced, mobile-optimized format
+  - 🎯 **Action-Oriented**: Deliverables categorized strictly by Owner + Deadline
+- **One-Click Send**: Open directly in WhatsApp (`wa.me/?text=...`), launch in default Email (`mailto:?...`), or Copy to Clipboard.
+
+### 5. 📅 Action Items to Calendar & Tasks
+- **Closed-Loop Execution**: Turns extracted tasks into concrete calendar events with deadlines.
+- **One-Tap Google Calendar**: Launches Google Calendar with title, description, and deadline pre-populated.
+- **Universal iCalendar (.ics) Export**: Generates standard RFC 5545 `.ics` files with alarm reminders (`VALARM`) for bulk import into Apple Calendar, Outlook, and Google Calendar.
+
+---
+
+## 🔑 Abstracted API Configuration
+
+API keys are completely abstracted from the user interface. Keys are loaded automatically from `.env.local` or fallback configuration in `constants/ApiConfig.ts`.
 
 ### Option A: `.env.local` (Recommended)
-Edit `.env.local` in the project root:
+Add your keys in `.env.local` in the project root:
+
 ```env
+# Groq API Key (from https://console.groq.com/keys)
 EXPO_PUBLIC_GROQ_API_KEY=your_groq_api_key_here
-EXPO_PUBLIC_SARVAM_API_KEY=your_sarvam_subscription_key_here
+
+# Sarvam AI Subscription Key (from https://dashboard.sarvam.ai)
+EXPO_PUBLIC_SARVAM_API_KEY=your_sarvam_api_key_here
 ```
 
 ### Option B: `constants/ApiConfig.ts`
 Edit `constants/ApiConfig.ts` directly:
+
 ```typescript
 export const API_CONFIG = {
-  GROQ_API_KEY: 'your_groq_api_key_here',
-  SARVAM_API_KEY: 'your_sarvam_subscription_key_here',
+  GROQ_API_KEY: process.env.EXPO_PUBLIC_GROQ_API_KEY || 'your_groq_key_here',
+  SARVAM_API_KEY: process.env.EXPO_PUBLIC_SARVAM_API_KEY || 'your_sarvam_key_here',
 };
 ```
 
 ---
 
-## 🎯 Core Philosophy & Abstracted Flow
+## 🔄 Core Architecture & Processing Pipeline
 
-The application enforces a clean **3-Stage Rhythm**:
+The app follows a strict **3-Stage Workflow**:
 
 ```
-[ Stage 1: Record ] ──────────────► [ Stage 2: Transcribe ] ──────────────► [ Stage 3: AI Notes ]
-• Pure local 16kHz PCM WAV capture  • Groq Whisper Turbo (~400ms)          • Groq Llama 3.3 70B (~500 tok/s)
-• ZERO live network requests        • Sarvam AI Saaras (Indian languages)  • Sarvam-105B Reasoning
-• Waveform meter & timer            • Speaker & timestamp alignment        • Structured Action Items & Decisions
-• 100% conversation privacy         • Fully automatic post-processing      • Markdown & Native Share
+[ Stage 1: Local Recording ] ──────► [ Stage 2: Cloud Transcription ] ──────► [ Stage 3: AI Synthesis ]
+• 16kHz 16-bit Mono PCM WAV capture    • Groq Whisper Large v3 Turbo (~400ms)   • Groq GPT 120B / Qwen 27B
+• ZERO live network requests           • Sarvam Saaras v4 (Indian Multilingual) • Sarvam 105B Reasoning
+• Real-time waveform & monotonic timer • Segmented timestamps & speaker alignment• Promise Radar extraction
+• 100% conversation privacy & offline  • Cross-platform FormData WAV handling   • Evidence timestamp linking
 ```
 
 ---
 
-## ⚡ High-Performance Cloud Endpoints
+## ⚡ Active Cloud AI Endpoints
 
-### 1. Groq API Endpoints
+### 1. Groq Cloud Engine
 - **Speech-to-Text (`https://api.groq.com/openai/v1/audio/transcriptions`)**:
-  - `whisper-large-v3-turbo`: Sub-second cloud transcription, highest speed & precision.
-  - `whisper-large-v3`: Standard full Whisper v3.
-- **AI Reasoning & Notes (`https://api.groq.com/openai/v1/chat/completions`)**:
-  - `llama-3.3-70b-versatile`: 70B frontier intelligence, structured JSON output (~300-500 tok/sec).
-  - `llama-3.1-8b-instant`: Ultra-low latency task synthesis.
+  - `whisper-large-v3-turbo`: Sub-second cloud speech recognition with word-level accuracy.
+  - `whisper-large-v3`: Standard Whisper Large v3 model.
+- **Note & Reasoning Synthesis (`https://api.groq.com/openai/v1/chat/completions`)**:
+  - `openai/gpt-oss-120b`: Flagship 120B reasoning model on Groq for deep analysis and Promise Radar extraction.
+  - `qwen/qwen3.8-27b`: Ultra-fast 27B model (~500 tokens/second).
+  - `openai/gpt-oss-20b`: Low-latency 20B utility model.
 
-### 2. Sarvam AI Endpoints
+### 2. Sarvam AI Engine
 - **Speech-to-Text (`https://api.sarvam.ai/speech-to-text`)**:
-  - `saaras:v4`: State-of-the-art model for Indian English, Hindi (`hi-IN`), Tamil (`ta-IN`), Telugu (`te-IN`), Bengali (`bn-IN`), Marathi (`mr-IN`), and regional accents.
-  - Supports automatic language detection (`unknown`) or specific language code hints.
-- **AI Reasoning & Notes (`https://api.sarvam.ai/v1/chat/completions`)**:
-  - `sarvam-105b`: Flagship 105B parameter model built for complex reasoning and agentic workflows.
-  - `sarvam-105b-conversations`: Post-trained conversational variant tuned for meeting dialogues.
+  - `saaras:v4`: Speech recognition optimized for Indian English, Hindi (`hi-IN`), Tamil (`ta-IN`), Telugu (`te-IN`), Bengali (`bn-IN`), Marathi (`mr-IN`), and regional accents.
+  - Automatic language detection or targeted language hints.
+- **Note & Reasoning Synthesis (`https://api.sarvam.ai/v1/chat/completions`)**:
+  - `sarvam-105b`: Advanced 105B reasoning model with chain-of-thought support.
 
 ---
 
-## 📱 Navigation & Screens
+## 📱 Navigation & App Structure
 
-- **Home (`/`)**: Quick Record hero CTA, pending action item checklists, recent meeting notes, and upcoming schedule.
-- **Record (`/record`)**: Primary recording screen with real-time waveform visualizer, elapsed monotonic timer, active engine badge, and two-stage pipeline progress indicator.
-- **Notes Library (`/notes`)**: Searchable notes index with filter tabs (All, Tasks, Audio) and tag chips.
-- **Note Detail (`/notes/[id]`)**: Full note view with audio player, executive summary, interactive checklist checkboxes, decisions, markdown representation, and transcript.
-- **Schedule (`/meetings`)**: Upcoming meeting schedule with one-tap record linking.
-- **Meeting Detail (`/meeting/[id]`)**: Meeting metadata, attendees, agenda, and linked recording notes.
-- **Settings (`/settings`)**: Simple abstracted engine switcher (Groq Turbo vs Sarvam AI Multilingual), language selection, and data management.
+- **Dashboard (`app/(tabs)/index.tsx`)**: Hero quick record CTA, Promise Radar overview, pending tasks checklist, and upcoming meeting briefings.
+- **Live Recording (`app/(tabs)/record.tsx`)**: Distraction-free recording screen with audio metering, elapsed timer, and staged pipeline progress.
+- **Notes Library (`app/(tabs)/notes.tsx`)**: Searchable repository of all processed meetings with tag filters and search indexing.
+- **Note Detail (`app/notes/[id].tsx`)**:
+  - Synchronized audio player with scrub & skip controls
+  - Promise Radar commitment ledger ("I Owe" vs. "They Owe Me")
+  - Executive summary and key topics
+  - Action items checklist with **Google Calendar** and **.ics Export**
+  - Key decisions with **Conversation Evidence Links**
+  - **Auto Follow-Up Draft** button (Email / WhatsApp generator)
+  - Full timestamped transcript view
+- **Schedule (`app/(tabs)/meetings.tsx`)**: Upcoming meeting schedule with one-tap briefing badges and recording triggers.
+- **Meeting Detail (`app/meeting/[id].tsx`)**: Agenda, attendee list, linked notes, and **Before-You-Meet Briefing Card**.
+- **Settings (`app/(tabs)/settings.tsx`)**: Abstracted engine toggle (Groq Turbo vs. Sarvam Multilingual), model profiles, and storage management.
 
 ---
 
 ## 🛠️ Tech Stack
 
 - **Framework**: React Native 0.86, Expo SDK 57, Expo Router 57
-- **UI Kit & Design Tokens**: Terracotta Coral (`#E06D53`), Forest Moss Olive (`#4D5C3B`), and Warm Amber (`#F5C242`)
+- **Language**: TypeScript 6.0
 - **State Management**: Zustand
-- **Audio Capture**: `expo-audio` & Web `MediaRecorder`
-- **Animations**: `react-native-reanimated` & React Native `Animated`
-- **Typography & Icons**: `@expo/vector-icons` (Ionicons) and SpaceMono
+- **Audio Capture & Playback**: `expo-audio` & Web `MediaRecorder` API
+- **Animations & Layout**: `react-native-reanimated`, React Native `Animated`, and Safe Area Context
+- **Icons**: `@expo/vector-icons` (Ionicons)
+- **Styling**: Material You / Themed Tokens (Terracotta Coral `#E06D53`, Forest Moss Olive `#4D5C3B`, Warm Amber `#F5C242`)
 
 ---
 
-## 📦 How to Run
+## 🚀 Getting Started
 
-### Install Dependencies
+### 1. Install Dependencies
 ```bash
 npm install
 ```
 
-### Start Web Preview
+### 2. Run on Web
 ```bash
-npx expo start --web
+npm run web
 ```
+Opens in browser at `http://localhost:8081`.
 
-### Build & Export Static Web
+### 3. Run on Mobile (Expo Go / Simulator)
+```bash
+npx expo start
+```
+Scan the QR code with Expo Go on Android or the Camera app on iOS.
+
+### 4. Build Static Web Distribution
 ```bash
 npx expo export --platform web
 ```
 
-### Run on Android
-```bash
-npx expo run:android
-```
+---
 
-### Run on iOS
-```bash
-npx expo run:ios
-```
+## 📄 License
+MIT
