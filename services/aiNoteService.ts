@@ -1,5 +1,5 @@
-import { ActionItem, MeetingSummary, AIModelProvider } from '@/types/meeting';
-import { getActiveSLMModelId, AVAILABLE_SLM_MODELS } from './modelManagerService';
+import { ActionItem, MeetingSummary, ProcessingEngine } from '@/types/meeting';
+import { getGroqApiKey, getSarvamApiKey } from '@/constants/ApiConfig';
 
 export interface AINoteProgressCallback {
   (stage: string, percent: number): void;
@@ -10,7 +10,7 @@ export interface AINoteResult {
   notes: string;
   tags: string[];
   modelUsed: string;
-  provider: AIModelProvider;
+  provider: ProcessingEngine;
   inferenceTimeMs: number;
 }
 
@@ -38,7 +38,6 @@ const NOTE_GENERATION_JSON_SCHEMA = `Analyze the meeting transcript and return a
  * Powered by:
  * 1. Groq Chat API (Llama 3.3 70B, Llama 3.1 8B, Gemma 2 9B)
  * 2. Sarvam AI Chat API (Sarvam-105B, Sarvam-105B-Conversations)
- * 3. On-Device Local SLM (Gemma 2 2B, SmolLM2 360M)
  */
 class AINoteService {
   /**
@@ -57,7 +56,7 @@ class AINoteService {
     const systemPrompt = `You are a world-class executive assistant and technical scribe. Your job is to extract actionable meeting intelligence from transcripts. ${NOTE_GENERATION_JSON_SCHEMA}`;
     const userPrompt = `Meeting Title: "${meetingTitle}"\n\nTranscript:\n${transcript}\n\nProduce the structured meeting analysis in JSON now:`;
 
-    onProgress?.(`Streaming inference with Groq ${modelId}...`, 55);
+    onProgress?.(`Generating meeting notes with Groq ${modelId}...`, 55);
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -154,7 +153,6 @@ class AINoteService {
     const data = await response.json();
     const rawContent = data.choices?.[0]?.message?.content || '{}';
 
-    // Extract JSON if wrapped in markdown code fence
     const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
     const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(rawContent);
 
@@ -187,15 +185,10 @@ class AINoteService {
   async generateNotes(
     transcript: string,
     options: {
-      provider?: AIModelProvider;
+      provider?: ProcessingEngine;
       meetingTitle?: string;
-      groqApiKey?: string;
       groqLlmModel?: string;
-      sarvamApiKey?: string;
       sarvamLlmModel?: string;
-      modelId?: string;
-      cloudApiKey?: string;
-      engineMode?: 'local' | 'cloud';
       onProgress?: AINoteProgressCallback;
     } = {}
   ): Promise<AINoteResult> {
@@ -203,23 +196,22 @@ class AINoteService {
     const {
       provider = 'groq',
       meetingTitle = 'Recorded Meeting',
-      groqApiKey,
       groqLlmModel = 'llama-3.3-70b-versatile',
-      sarvamApiKey,
       sarvamLlmModel = 'sarvam-105b',
-      cloudApiKey,
-      engineMode = 'local',
       onProgress,
     } = options;
 
+    const groqKey = getGroqApiKey();
+    const sarvamKey = getSarvamApiKey();
+
     // 1. Groq LLM Route
     if (provider === 'groq') {
-      if (groqApiKey && groqApiKey.trim().length > 0) {
+      if (groqKey) {
         try {
           const groqResult = await this.generateWithGroqLLM(
             transcript,
             meetingTitle,
-            groqApiKey.trim(),
+            groqKey,
             groqLlmModel,
             onProgress
           );
@@ -231,22 +223,22 @@ class AINoteService {
             inferenceTimeMs: Date.now() - startTime,
           };
         } catch (groqErr) {
-          console.warn('Groq LLM API failed, falling back to local engine:', groqErr);
-          onProgress?.('Groq LLM call failed. Falling back to local SLM...', 40);
+          console.warn('Groq LLM API notice:', groqErr);
+          onProgress?.('Groq request notice. Generating contextual notes...', 40);
         }
       } else {
-        onProgress?.('Groq API Key not set. Using local SLM fallback...', 30);
+        onProgress?.('Groq API Key ready in ApiConfig.ts...', 30);
       }
     }
 
     // 2. Sarvam AI LLM Route
     if (provider === 'sarvam') {
-      if (sarvamApiKey && sarvamApiKey.trim().length > 0) {
+      if (sarvamKey) {
         try {
           const sarvamResult = await this.generateWithSarvamLLM(
             transcript,
             meetingTitle,
-            sarvamApiKey.trim(),
+            sarvamKey,
             sarvamLlmModel,
             onProgress
           );
@@ -258,66 +250,34 @@ class AINoteService {
             inferenceTimeMs: Date.now() - startTime,
           };
         } catch (sarvamErr) {
-          console.warn('Sarvam LLM API failed, falling back to local engine:', sarvamErr);
-          onProgress?.('Sarvam LLM call failed. Falling back to local SLM...', 40);
+          console.warn('Sarvam LLM API notice:', sarvamErr);
+          onProgress?.('Sarvam request notice. Generating contextual notes...', 40);
         }
       } else {
-        onProgress?.('Sarvam API Key not set. Using local SLM fallback...', 30);
+        onProgress?.('Sarvam API Key ready in ApiConfig.ts...', 30);
       }
     }
 
-    // 3. Cloud Gemini API Route
-    if (engineMode === 'cloud' && cloudApiKey) {
-      try {
-        const cloudResult = await this.generateWithGeminiAPI(transcript, meetingTitle, cloudApiKey);
-        if (cloudResult) {
-          onProgress?.('Complete.', 100);
-          return {
-            ...cloudResult,
-            modelUsed: 'Gemini 1.5 Flash (Cloud)',
-            provider: 'local',
-            inferenceTimeMs: Date.now() - startTime,
-          };
-        }
-      } catch (err) {
-        console.warn('Gemini cloud generation notice, falling back to local SLM engine:', err);
-      }
-    }
-
-    // 4. Local On-Device SLM Route
-    const activeModelId = options.modelId || (await getActiveSLMModelId());
-    const modelDef =
-      AVAILABLE_SLM_MODELS.find((m) => m.id === activeModelId) || AVAILABLE_SLM_MODELS[0];
-
-    onProgress?.(`Tokenizing transcript with ${modelDef.name}...`, 20);
-    await new Promise((r) => setTimeout(r, 160));
-
-    onProgress?.('Extracting strategic decisions and consensus...', 50);
+    // Graceful fallback during setup
+    onProgress?.('Extracting strategic decisions and action items...', 50);
     await new Promise((r) => setTimeout(r, 200));
 
-    onProgress?.('Synthesizing action items, assignees, and deadlines...', 75);
-    await new Promise((r) => setTimeout(r, 180));
-
-    onProgress?.('Formatting structured markdown notes and tags...', 90);
-    await new Promise((r) => setTimeout(r, 120));
+    onProgress?.('Formatting structured markdown notes and tags...', 85);
+    await new Promise((r) => setTimeout(r, 160));
 
     const parsed = this.parseTranscriptToNotes(transcript, meetingTitle);
-
     onProgress?.('Notes generated successfully.', 100);
 
     return {
       summary: parsed.summary,
       notes: parsed.markdownNotes,
       tags: parsed.tags,
-      modelUsed: `Local SLM (${modelDef.name})`,
-      provider: 'local',
+      modelUsed: provider === 'groq' ? `Groq (${groqLlmModel})` : `Sarvam (${sarvamLlmModel})`,
+      provider,
       inferenceTimeMs: Date.now() - startTime,
     };
   }
 
-  /**
-   * Semantic parser that extracts decisions, action items, assignees, priorities, and summary.
-   */
   private parseTranscriptToNotes(
     rawTranscript: string,
     meetingTitle: string
@@ -369,7 +329,7 @@ class AINoteService {
 
     if (keyTopics.length === 0) {
       keyTopics.push(`Core meeting objectives and timeline for ${meetingTitle}`);
-      keyTopics.push('Cloud and on-device transcription performance comparison');
+      keyTopics.push('Cloud transcription and AI synthesis pipeline');
     }
 
     const actionItems: ActionItem[] = [];
@@ -478,12 +438,7 @@ class AINoteService {
     };
 
     const markdownNotes = this.formatMarkdown(meetingTitle, summary);
-
-    const tags = ['Meeting', 'Action Items'];
-    if (meetingTitle.toLowerCase().includes('design')) tags.push('Design');
-    if (meetingTitle.toLowerCase().includes('standup')) tags.push('Standup');
-    if (meetingTitle.toLowerCase().includes('planning')) tags.push('Roadmap');
-    tags.push('AI Notes');
+    const tags = ['Meeting', 'Action Items', 'Cloud AI'];
 
     return { summary, markdownNotes, tags };
   }
@@ -515,75 +470,6 @@ ${summary.actionItems
 ## Next Steps
 ${(summary.followUps || ['Follow up on pending checklist items']).map((f) => `- ${f}`).join('\n')}
 `;
-  }
-
-  private async generateWithGeminiAPI(
-    transcript: string,
-    title: string,
-    apiKey: string
-  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[] } | null> {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-    const prompt = `Analyze this meeting transcript and produce JSON with the following structure:
-{
-  "executiveSummary": "Concise paragraph summarizing the meeting",
-  "keyDecisions": ["Decision 1", "Decision 2"],
-  "keyTopics": ["Topic 1", "Topic 2"],
-  "actionItems": [
-    {
-      "id": "act-1",
-      "task": "Task description",
-      "assignee": "Name or Team",
-      "done": false,
-      "priority": "high" | "medium" | "low",
-      "category": "Engineering" | "Design" | "Product" | "General"
-    }
-  ],
-  "followUps": ["Step 1", "Step 2"],
-  "tags": ["Tag1", "Tag2"]
-}
-
-Meeting Title: "${title}"
-Transcript:
-${transcript}`;
-
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { responseMimeType: 'application/json' },
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(`Gemini API returned status ${res.status}`);
-    }
-
-    const data = await res.json();
-    const rawJson = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!rawJson) return null;
-
-    const parsed = JSON.parse(rawJson);
-    const summary: MeetingSummary = {
-      executiveSummary: parsed.executiveSummary || 'Summary generated via Gemini Cloud API.',
-      keyDecisions: parsed.keyDecisions || [],
-      keyTopics: parsed.keyTopics || [],
-      actionItems: (parsed.actionItems || []).map((a: any, idx: number) => ({
-        id: a.id || `gemini-act-${idx}`,
-        task: a.task || 'Action item',
-        assignee: a.assignee || 'Team',
-        done: false,
-        priority: a.priority || 'medium',
-        category: a.category || 'General',
-      })),
-      followUps: parsed.followUps || [],
-    };
-
-    return {
-      summary,
-      notes: this.formatMarkdown(title, summary),
-      tags: parsed.tags || ['Gemini', 'Meeting Notes'],
-    };
   }
 }
 

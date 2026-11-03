@@ -68,35 +68,25 @@ export interface Meeting {
   createdAt: string;
 }
 
-export type TranscriptionProvider = 'groq' | 'sarvam' | 'local';
-export type AIModelProvider = 'groq' | 'sarvam' | 'local';
+export type ProcessingEngine = 'groq' | 'sarvam';
+export type TranscriptionProvider = ProcessingEngine;
+export type AIModelProvider = ProcessingEngine;
 
 export interface UserSettings {
   userName: string;
   userEmail: string;
-  engineMode: 'local' | 'cloud';
 
-  // Providers selection
-  transcriptionProvider: TranscriptionProvider;
-  aiModelProvider: AIModelProvider;
+  // Active Processing Engine ('groq' for ultra-fast, 'sarvam' for multilingual Indian speech)
+  activeEngine: ProcessingEngine;
 
-  // Groq API Settings
-  groqApiKey?: string;
+  // Groq Model Profiles
   groqWhisperModel: 'whisper-large-v3-turbo' | 'whisper-large-v3' | 'distil-whisper-large-v3-en';
   groqLlmModel: 'llama-3.3-70b-versatile' | 'llama-3.1-8b-instant' | 'gemma2-9b-it' | 'mixtral-8x7b-32768';
 
-  // Sarvam API Settings
-  sarvamApiKey?: string;
+  // Sarvam Model Profiles
   sarvamSttModel: 'saaras:v4' | 'saaras:v3';
   sarvamLanguageCode: string; // 'unknown' | 'en-IN' | 'hi-IN' | etc.
   sarvamLlmModel: 'sarvam-105b' | 'sarvam-105b-conversations';
-
-  // Local / On-Device Fallback Settings
-  whisperModel: 'ggml-tiny.en.bin' | 'ggml-base.en.bin' | 'ggml-small.en.bin';
-  whisperModelDownloaded: boolean;
-  activeSlmModel: string;
-  slmModelDownloaded: boolean;
-  cloudApiKey?: string;
 
   autoTranscribe: boolean;
   autoSummarize: boolean;

@@ -30,29 +30,16 @@ interface ActiveRecordingState {
 const INITIAL_SETTINGS: UserSettings = {
   userName: 'Product Team',
   userEmail: 'team@meetanotes.ai',
-  engineMode: 'cloud',
+  activeEngine: 'groq',
 
-  // Providers
-  transcriptionProvider: 'groq',
-  aiModelProvider: 'groq',
-
-  // Groq API Defaults
-  groqApiKey: '',
+  // Groq Model Profiles
   groqWhisperModel: 'whisper-large-v3-turbo',
   groqLlmModel: 'llama-3.3-70b-versatile',
 
-  // Sarvam API Defaults
-  sarvamApiKey: '',
+  // Sarvam Model Profiles
   sarvamSttModel: 'saaras:v4',
   sarvamLanguageCode: 'unknown',
   sarvamLlmModel: 'sarvam-105b',
-
-  // Local / On-Device Fallbacks
-  whisperModel: 'ggml-tiny.en.bin',
-  whisperModelDownloaded: true,
-  activeSlmModel: 'gemma-2-2b-it.gguf',
-  slmModelDownloaded: true,
-  cloudApiKey: '',
 
   autoTranscribe: true,
   autoSummarize: true,
