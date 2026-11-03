@@ -49,6 +49,13 @@ Designed around zero-interruption recording: captures local high-fidelity audio 
 - **In-Place Note Peeking**: Tap **Peek Full Note** to inspect full decisions and transcripts in a modal without stopping or disrupting the active recording.
 - **Context Pinning**: Pin relevant past context directly into the current session; the final generated notes automatically reference and link prior discussions.
 
+### 7. 📸 Whiteboard & Meeting Note Camera Digitalization
+- **Floating Camera Button**: Persistent bottom-left floating action button on the Home screen for instant note digitizing.
+- **Groq Multimodal Vision**: Powered by Groq LPU Vision (`qwen/qwen3.8-27b`) delivering high-accuracy visual OCR and structured reasoning in ~1-2 seconds.
+- **Handwriting & Architecture Interpretation**: Transcribes messy handwriting, bullet points, system architecture diagrams, and sticky notes.
+- **Automated Intelligence Extraction**: Converts visual snapshots into complete executive summaries, structured decisions, action items with owners, and Promise Radar commitments.
+- **Instant Note Library Integration**: Saves directly to the local knowledge base with immediate navigation to `/notes/[id]`.
+
 ---
 
 ## 🔑 Abstracted API Configuration
@@ -102,6 +109,8 @@ The app follows a strict **3-Stage Workflow**:
   - `openai/gpt-oss-120b`: Flagship 120B reasoning model on Groq for deep analysis and Promise Radar extraction.
   - `qwen/qwen3.8-27b`: Ultra-fast 27B model (~500 tokens/second).
   - `openai/gpt-oss-20b`: Low-latency 20B utility model.
+- **Multimodal Vision (`https://api.groq.com/openai/v1/chat/completions`)**:
+  - `qwen/qwen3.8-27b`: Sub-2-second vision model for whiteboards, handwritten notes, architecture diagrams, and slide OCR.
 
 ### 2. Sarvam AI Engine
 - **Speech-to-Text (`https://api.sarvam.ai/speech-to-text`)**:
