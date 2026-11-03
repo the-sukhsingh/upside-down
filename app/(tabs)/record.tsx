@@ -152,19 +152,32 @@ export default function RecordScreen() {
     const newRec = createRecordingEntry(audioUri, meetingTitle, meetingId);
 
     // 3. Initiate post-recording pipeline: Transcribe -> AI Notes
+    const sttProviderLabel =
+      settings.transcriptionProvider === 'groq'
+        ? `Groq (${settings.groqWhisperModel})`
+        : settings.transcriptionProvider === 'sarvam'
+        ? `Sarvam AI (${settings.sarvamSttModel})`
+        : `Local Whisper (${settings.whisperModel})`;
+
     setProcessingState({
       isProcessing: true,
       currentStage: 'transcribing',
-      stageMessage: 'Starting Whisper speech recognition...',
+      stageMessage: `Connecting to ${sttProviderLabel}...`,
       progressPercent: 5,
       recordingId: newRec.id,
     });
 
     try {
-      // Step A: Speech-to-Text Transcription
+      // Step A: Speech-to-Text Transcription via Groq, Sarvam, or Local
       const transcriptionResult = await transcriptionService.transcribeAudio(audioUri, {
+        provider: settings.transcriptionProvider,
         meetingTitle,
         durationSeconds: recordedDuration,
+        groqApiKey: settings.groqApiKey,
+        groqWhisperModel: settings.groqWhisperModel,
+        sarvamApiKey: settings.sarvamApiKey,
+        sarvamSttModel: settings.sarvamSttModel,
+        sarvamLanguageCode: settings.sarvamLanguageCode,
         modelId: settings.whisperModel,
         onProgress: (stage, percent) => {
           setProcessingState({
@@ -182,17 +195,29 @@ export default function RecordScreen() {
         transcriptSegments: transcriptionResult.segments,
       });
 
-      // Step B: AI Model Note Creation
+      // Step B: AI Model Note Creation via Groq, Sarvam, or Local
+      const aiProviderLabel =
+        settings.aiModelProvider === 'groq'
+          ? `Groq (${settings.groqLlmModel})`
+          : settings.aiModelProvider === 'sarvam'
+          ? `Sarvam AI (${settings.sarvamLlmModel})`
+          : `Local SLM (${settings.activeSlmModel})`;
+
       setProcessingState({
         currentStage: 'summarizing',
-        stageMessage: 'AI Model analyzing transcript for key decisions & tasks...',
+        stageMessage: `Synthesizing meeting intelligence with ${aiProviderLabel}...`,
         progressPercent: 52,
       });
 
       const noteResult = await aiNoteService.generateNotes(
         transcriptionResult.fullTranscript,
         {
+          provider: settings.aiModelProvider,
           meetingTitle,
+          groqApiKey: settings.groqApiKey,
+          groqLlmModel: settings.groqLlmModel,
+          sarvamApiKey: settings.sarvamApiKey,
+          sarvamLlmModel: settings.sarvamLlmModel,
           modelId: settings.activeSlmModel,
           cloudApiKey: settings.cloudApiKey,
           engineMode: settings.engineMode,
@@ -411,7 +436,15 @@ export default function RecordScreen() {
               <Ionicons name="sparkles" size={12} color={colors.primary} />
               <Text style={[styles.modelTagText, { color: colors.primary }]}>
                 {processingState.currentStage === 'transcribing'
-                  ? `Whisper STT (${settings.whisperModel})`
+                  ? settings.transcriptionProvider === 'groq'
+                    ? `Groq Whisper (${settings.groqWhisperModel})`
+                    : settings.transcriptionProvider === 'sarvam'
+                    ? `Sarvam AI (${settings.sarvamSttModel})`
+                    : `Whisper STT (${settings.whisperModel})`
+                  : settings.aiModelProvider === 'groq'
+                  ? `Groq (${settings.groqLlmModel})`
+                  : settings.aiModelProvider === 'sarvam'
+                  ? `Sarvam (${settings.sarvamLlmModel})`
                   : `Model: ${settings.activeSlmModel}`}
               </Text>
             </View>
@@ -559,6 +592,43 @@ export default function RecordScreen() {
             <Text style={[styles.cardSectionSubtitle, { color: colors.textSecondary }]}>
               Select an upcoming meeting or record an ad-hoc voice note. Once recorded, the app transcribes and generates notes automatically.
             </Text>
+
+            {/* Active API Endpoints Card */}
+            <TouchableOpacity
+              onPress={() => router.push('/settings')}
+              style={[
+                styles.apiBadgeCard,
+                { backgroundColor: colors.surfaceContainerLow, borderColor: colors.cardBorder },
+              ]}>
+              <View style={styles.apiBadgeLeft}>
+                <View style={[styles.apiBadgeIconBg, { backgroundColor: colors.primaryContainer }]}>
+                  <Ionicons name="flash" size={15} color={colors.primary} />
+                </View>
+                <View style={styles.apiBadgeTextCol}>
+                  <Text style={[styles.apiBadgeTitle, { color: colors.text }]}>
+                    {settings.transcriptionProvider === 'groq'
+                      ? 'Groq Whisper'
+                      : settings.transcriptionProvider === 'sarvam'
+                      ? 'Sarvam AI Saaras'
+                      : 'Local Whisper'}{' '}
+                    +{' '}
+                    {settings.aiModelProvider === 'groq'
+                      ? 'Groq Llama 3.3'
+                      : settings.aiModelProvider === 'sarvam'
+                      ? 'Sarvam 105B'
+                      : 'Local SLM'}
+                  </Text>
+                  <Text style={[styles.apiBadgeSub, { color: colors.textSecondary }]}>
+                    {settings.transcriptionProvider === 'groq' && !settings.groqApiKey
+                      ? '⚠️ Groq Key needed · Tap to configure in Settings'
+                      : settings.transcriptionProvider === 'sarvam' && !settings.sarvamApiKey
+                      ? '⚠️ Sarvam Key needed · Tap to configure in Settings'
+                      : '⚡ High performance cloud endpoints active'}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+            </TouchableOpacity>
 
             {/* Meeting selector */}
             <TouchableOpacity
@@ -763,6 +833,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 16,
+  },
+  apiBadgeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  apiBadgeLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  apiBadgeIconBg: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  apiBadgeTextCol: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  apiBadgeTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  apiBadgeSub: {
+    fontSize: 11,
+    marginTop: 2,
   },
   pickerTrigger: {
     flexDirection: 'row',
@@ -1128,3 +1233,4 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 });
+
