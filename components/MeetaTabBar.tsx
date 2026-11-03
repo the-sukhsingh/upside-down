@@ -20,6 +20,7 @@ import Animated, {
   type WithSpringConfig,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import Colors, { type M3ColorScheme } from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -33,10 +34,14 @@ export interface MeetaTabBarProps {
     }[];
   };
   descriptors: Record<string, any>;
-  navigation: {
-    emit: (event: any) => any;
-    navigate: (name: string, params?: any) => void;
+  navigation?: {
+    emit?: (event: any) => any;
+    navigate?: (name: string, params?: any) => void;
   };
+  emitter?: {
+    emit: (event: any) => any;
+  };
+  navigateToTab?: (routeKey: string) => void;
   insets: {
     top: number;
     bottom: number;
@@ -298,6 +303,8 @@ export function MeetaTabBar({
   state,
   descriptors,
   navigation,
+  emitter,
+  navigateToTab,
   insets,
 }: MeetaTabBarProps) {
   const colorScheme = useColorScheme();
@@ -407,22 +414,33 @@ export function MeetaTabBar({
           const label = typeof rawLabel === 'string' ? rawLabel : config.label;
 
           const onPress = () => {
-            const event = navigation.emit({
+            const emitFn = emitter?.emit || navigation?.emit;
+            const event = emitFn ? emitFn({
               type: 'tabPress',
               target: route.key,
               canPreventDefault: true,
-            });
+            }) : undefined;
 
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
+            if (!isFocused && !event?.defaultPrevented) {
+              if (navigateToTab) {
+                navigateToTab(route.key);
+              } else if (navigation?.navigate) {
+                navigation.navigate(route.name, route.params);
+              } else {
+                const targetPath = route.name === 'index' ? '/' : `/(tabs)/${route.name}`;
+                router.navigate(targetPath as any);
+              }
             }
           };
 
           const onLongPress = () => {
-            navigation.emit({
-              type: 'tabLongPress',
-              target: route.key,
-            });
+            const emitFn = emitter?.emit || navigation?.emit;
+            if (emitFn) {
+              emitFn({
+                type: 'tabLongPress',
+                target: route.key,
+              });
+            }
           };
 
           return (
