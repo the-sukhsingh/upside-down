@@ -13,8 +13,13 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Text, View } from '@/components/Themed';
 import { useMeetingStore } from '@/store/meetingStore';
-import { RecordingPlayer } from '@/components/RecordingPlayer';
+import { RecordingPlayer, SeekTarget } from '@/components/RecordingPlayer';
+import { EvidenceTag } from '@/components/EvidenceTag';
+import { PromiseRadarCard } from '@/components/PromiseRadarCard';
+import { AutoFollowUpModal } from '@/components/AutoFollowUpModal';
 import { ToastNotification, ToastConfig } from '@/components/ToastNotification';
+import { calendarTaskService } from '@/services/calendarTaskService';
+import { ActionItem } from '@/types/meeting';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -27,7 +32,9 @@ export default function NoteDetailScreen() {
 
   const {
     recordings,
+    commitments,
     toggleActionItem,
+    toggleCommitment,
     updateRecordingNotes,
     deleteRecording,
   } = useMeetingStore();
@@ -38,6 +45,8 @@ export default function NoteDetailScreen() {
   const [personalNotes, setPersonalNotes] = useState(recording?.notes || '');
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [showFullTranscript, setShowFullTranscript] = useState(false);
+  const [seekTarget, setSeekTarget] = useState<SeekTarget | null>(null);
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
 
   if (!recording) {
     return (
@@ -65,6 +74,12 @@ export default function NoteDetailScreen() {
   const actionItems = recording.summary?.actionItems || [];
   const completedCount = actionItems.filter((a) => a.done).length;
 
+  // Retrieve commitments for this recording (or fall back to global commitments matching recording ID)
+  const recordingCommitments =
+    recording.summary?.commitments && recording.summary.commitments.length > 0
+      ? recording.summary.commitments
+      : commitments.filter((c) => c.recordingId === recording.id);
+
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -86,6 +101,64 @@ export default function NoteDetailScreen() {
     } catch {
       return 'Recent';
     }
+  };
+
+  // Jump to exact audio timestamp (Conversation Evidence Link)
+  const handlePressEvidence = (startTime: number, label: string) => {
+    setSeekTarget({
+      second: startTime,
+      triggerKey: Date.now(),
+      label,
+    });
+    const mins = Math.floor(startTime / 60);
+    const secs = startTime % 60;
+    setToast({
+      type: 'info',
+      title: 'Playing Audio Evidence',
+      message: `Jumping audio to ${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`,
+      duration: 2500,
+    });
+  };
+
+  // Export single action item to calendar
+  const handleExportTaskToCalendar = async (item: ActionItem) => {
+    await calendarTaskService.exportActionItemToCalendar(item, recording.meetingTitle);
+    setToast({
+      type: 'success',
+      title: 'Calendar Opened',
+      message: `Add "${item.task}" with deadline to your calendar.`,
+      duration: 3500,
+    });
+  };
+
+  // Bulk export action items to iCalendar
+  const handleBulkExportCalendar = async () => {
+    if (actionItems.length === 0) return;
+    const icsData = calendarTaskService.generateIcsContent(
+      actionItems.map((a) => ({
+        title: a.task,
+        description: `Meeting: ${recording.meetingTitle}\nAssignee: ${a.assignee || 'Me'}`,
+        deadlinePhrase: a.dueDate,
+      }))
+    );
+
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+      const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${recording.meetingTitle.replace(/\s+/g, '_')}_tasks.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    setToast({
+      type: 'success',
+      title: 'Tasks Exported',
+      message: `${actionItems.length} tasks formatted for Apple/Google Calendar (.ics).`,
+      duration: 4000,
+    });
   };
 
   const handleShare = async () => {
@@ -146,6 +219,22 @@ export default function NoteDetailScreen() {
     <View style={[styles.screen, { backgroundColor: colors.background, paddingTop: insets.top }]}>
       <ToastNotification toast={toast} onDismiss={() => setToast(null)} />
 
+      {/* Auto Follow-Up Modal */}
+      <AutoFollowUpModal
+        visible={showFollowUpModal}
+        recording={recording}
+        onClose={() => setShowFollowUpModal(false)}
+        onCopySuccess={() => {
+          setShowFollowUpModal(false);
+          setToast({
+            type: 'success',
+            title: 'Copied to Clipboard!',
+            message: 'Ready-to-send follow-up draft is copied.',
+            duration: 3000,
+          });
+        }}
+      />
+
       {/* Top Navigation Bar */}
       <View style={[styles.navBar, { borderBottomColor: colors.border }]}>
         <TouchableOpacity onPress={() => router.back()} style={styles.navBackBtn}>
@@ -157,10 +246,19 @@ export default function NoteDetailScreen() {
         </Text>
 
         <View style={styles.navActions}>
-          <TouchableOpacity onPress={handleShare} style={styles.navIconBtn}>
+          {/* Feature 4: Auto Follow-Up Draft Trigger Button */}
+          <TouchableOpacity
+            onPress={() => setShowFollowUpModal(true)}
+            style={[styles.followUpNavBtn, { backgroundColor: colors.primaryContainer }]}
+            accessibilityLabel="Generate Follow-Up Draft">
+            <Ionicons name="paper-plane" size={14} color={colors.primary} />
+            <Text style={[styles.followUpNavBtnText, { color: colors.primary }]}>Follow-Up</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleShare} style={styles.navIconBtn} accessibilityLabel="Share note">
             <Ionicons name="share-outline" size={20} color={colors.text} />
           </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.navIconBtn}>
+          <TouchableOpacity onPress={handleDelete} style={styles.navIconBtn} accessibilityLabel="Delete note">
             <Ionicons name="trash-outline" size={20} color={colors.danger} />
           </TouchableOpacity>
         </View>
@@ -200,11 +298,26 @@ export default function NoteDetailScreen() {
             </View>
           )}
 
-          {/* Audio Player */}
+          {/* Audio Player with Evidence Jump Capability */}
           {recording.uri ? (
-            <RecordingPlayer uri={recording.uri} durationSeconds={recording.durationSeconds} />
+            <RecordingPlayer
+              uri={recording.uri}
+              durationSeconds={recording.durationSeconds}
+              seekTarget={seekTarget}
+            />
           ) : null}
         </View>
+
+        {/* Feature 1: Commitment Tracker ("Promise Radar") */}
+        {recordingCommitments.length > 0 && (
+          <PromiseRadarCard
+            commitments={recordingCommitments}
+            onToggleCommitment={toggleCommitment}
+            onPressEvidence={handlePressEvidence}
+            title="Promise Radar"
+            subtitle="Spoken commitments detected in this conversation"
+          />
+        )}
 
         {/* Executive Summary Card */}
         {recording.summary?.executiveSummary && (
@@ -221,18 +334,28 @@ export default function NoteDetailScreen() {
           </View>
         )}
 
-        {/* Action Items Checklist */}
+        {/* Feature 5 & Action Items Checklist */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.sectionHeaderRow}>
             <View style={[styles.sectionIconBg, { backgroundColor: colors.oliveLight }]}>
               <Ionicons name="checkbox-outline" size={16} color={colors.oliveText} />
             </View>
             <View style={styles.actionHeaderTitleCol}>
-              <Text style={[styles.sectionHeading, { color: colors.text }]}>Action Items</Text>
+              <Text style={[styles.sectionHeading, { color: colors.text }]}>Action Items Checklist</Text>
               <Text style={[styles.actionCounter, { color: colors.textSecondary }]}>
                 {completedCount} of {actionItems.length} completed
               </Text>
             </View>
+
+            {/* Feature 5 Bulk Calendar Export */}
+            {actionItems.length > 0 && (
+              <TouchableOpacity
+                onPress={handleBulkExportCalendar}
+                style={[styles.calendarSyncBtn, { backgroundColor: colors.surfaceContainer }]}>
+                <Ionicons name="calendar" size={13} color={colors.primary} />
+                <Text style={[styles.calendarSyncBtnText, { color: colors.primary }]}>Export All</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {actionItems.length === 0 ? (
@@ -242,10 +365,8 @@ export default function NoteDetailScreen() {
           ) : (
             <View style={styles.actionItemsList}>
               {actionItems.map((item) => (
-                <TouchableOpacity
+                <View
                   key={item.id}
-                  activeOpacity={0.7}
-                  onPress={() => toggleActionItem(recording.id, item.id)}
                   style={[
                     styles.actionItemRow,
                     {
@@ -255,12 +376,16 @@ export default function NoteDetailScreen() {
                       borderColor: colors.cardBorder,
                     },
                   ]}>
-                  <Ionicons
-                    name={item.done ? 'checkbox' : 'square-outline'}
-                    size={22}
-                    color={item.done ? colors.secondary : colors.textSecondary}
-                    style={styles.checkboxIcon}
-                  />
+                  {/* Complete checkmark */}
+                  <TouchableOpacity
+                    onPress={() => toggleActionItem(recording.id, item.id)}
+                    style={styles.checkboxTouchable}>
+                    <Ionicons
+                      name={item.done ? 'checkbox' : 'square-outline'}
+                      size={22}
+                      color={item.done ? colors.secondary : colors.textSecondary}
+                    />
+                  </TouchableOpacity>
 
                   <View style={styles.actionTextCol}>
                     <Text
@@ -313,22 +438,41 @@ export default function NoteDetailScreen() {
                         </View>
                       )}
 
-                      {item.category && (
+                      {item.dueDate && (
                         <View style={[styles.pill, { backgroundColor: colors.surfaceContainer }]}>
+                          <Ionicons name="alarm-outline" size={11} color={colors.textSecondary} />
                           <Text style={[styles.pillText, { color: colors.textSecondary }]}>
-                            {item.category}
+                            {item.dueDate}
                           </Text>
                         </View>
                       )}
+
+                      {/* Feature 2: Evidence Link Pill */}
+                      {item.evidence && (
+                        <EvidenceTag
+                          evidence={item.evidence}
+                          onPressEvidence={handlePressEvidence}
+                          compact
+                        />
+                      )}
+
+                      {/* Feature 5: Add to Calendar One-Tap */}
+                      <TouchableOpacity
+                        onPress={() => handleExportTaskToCalendar(item)}
+                        style={[styles.itemCalendarBtn, { backgroundColor: colors.primaryContainer }]}
+                        accessibilityLabel="Add task to Google Calendar">
+                        <Ionicons name="calendar-outline" size={11} color={colors.primary} />
+                        <Text style={[styles.itemCalendarBtnText, { color: colors.primary }]}>Calendar</Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
         </View>
 
-        {/* Key Decisions */}
+        {/* Feature 2: Key Decisions with Evidence Links */}
         {recording.summary?.keyDecisions && recording.summary.keyDecisions.length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.sectionHeaderRow}>
@@ -339,12 +483,30 @@ export default function NoteDetailScreen() {
             </View>
 
             <View style={styles.decisionsList}>
-              {recording.summary.keyDecisions.map((decision, idx) => (
-                <View key={idx} style={styles.decisionItemRow}>
-                  <View style={[styles.decisionDot, { backgroundColor: colors.primary }]} />
-                  <Text style={[styles.decisionText, { color: colors.text }]}>{decision}</Text>
-                </View>
-              ))}
+              {recording.summary.structuredDecisions && recording.summary.structuredDecisions.length > 0
+                ? recording.summary.structuredDecisions.map((item) => (
+                    <View key={item.id} style={styles.structuredDecisionCol}>
+                      <View style={styles.decisionItemRow}>
+                        <View style={[styles.decisionDot, { backgroundColor: colors.primary }]} />
+                        <Text style={[styles.decisionText, { color: colors.text }]}>{item.decision}</Text>
+                      </View>
+                      {item.evidence && (
+                        <View style={styles.evidenceIndent}>
+                          <EvidenceTag
+                            evidence={item.evidence}
+                            onPressEvidence={handlePressEvidence}
+                            compact
+                          />
+                        </View>
+                      )}
+                    </View>
+                  ))
+                : recording.summary.keyDecisions.map((decision, idx) => (
+                    <View key={idx} style={styles.decisionItemRow}>
+                      <View style={[styles.decisionDot, { backgroundColor: colors.primary }]} />
+                      <Text style={[styles.decisionText, { color: colors.text }]}>{decision}</Text>
+                    </View>
+                  ))}
             </View>
           </View>
         )}
@@ -453,36 +615,49 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 24,
   },
   backActionBtnText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   navBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'transparent',
   },
   navBackBtn: {
     padding: 6,
+    marginRight: 6,
   },
   navBarTitle: {
-    flex: 1,
     fontSize: 16,
     fontWeight: '700',
-    marginHorizontal: 10,
+    flex: 1,
   },
   navActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
     backgroundColor: 'transparent',
+  },
+  followUpNavBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  followUpNavBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   navIconBtn: {
     padding: 6,
@@ -493,13 +668,13 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
+    padding: 16,
     gap: 12,
   },
   meetingTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
     letterSpacing: -0.3,
   },
   metaRow: {
@@ -516,7 +691,6 @@ const styles = StyleSheet.create({
   },
   metaText: {
     fontSize: 12,
-    fontWeight: '500',
   },
   tagsRow: {
     flexDirection: 'row',
@@ -536,31 +710,45 @@ const styles = StyleSheet.create({
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    justifyContent: 'space-between',
     backgroundColor: 'transparent',
   },
   sectionIconBg: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    marginRight: 10,
   },
   sectionHeading: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+    flex: 1,
+  },
+  summaryText: {
+    fontSize: 14,
+    lineHeight: 22,
   },
   actionHeaderTitleCol: {
     flex: 1,
     backgroundColor: 'transparent',
   },
   actionCounter: {
-    fontSize: 12,
-    marginTop: 1,
+    fontSize: 11,
+    marginTop: 2,
   },
-  summaryText: {
-    fontSize: 14,
-    lineHeight: 22,
+  calendarSyncBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  calendarSyncBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   emptyHint: {
     fontSize: 13,
@@ -573,23 +761,23 @@ const styles = StyleSheet.create({
   actionItemRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: 10,
     padding: 12,
     borderRadius: 12,
     borderWidth: 1,
-    gap: 10,
   },
-  checkboxIcon: {
-    marginTop: 1,
+  checkboxTouchable: {
+    paddingTop: 1,
   },
   actionTextCol: {
     flex: 1,
-    gap: 6,
     backgroundColor: 'transparent',
+    gap: 6,
   },
   actionTaskText: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: '500',
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 18,
   },
   actionTaskDone: {
     textDecorationLine: 'line-through',
@@ -598,40 +786,62 @@ const styles = StyleSheet.create({
   actionPillsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: 6,
     backgroundColor: 'transparent',
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
     gap: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
   pillText: {
-    fontSize: 11,
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  itemCalendarBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  itemCalendarBtnText: {
+    fontSize: 10,
+    fontWeight: '700',
   },
   decisionsList: {
     gap: 8,
     backgroundColor: 'transparent',
   },
+  structuredDecisionCol: {
+    gap: 4,
+    backgroundColor: 'transparent',
+  },
+  evidenceIndent: {
+    marginLeft: 16,
+    backgroundColor: 'transparent',
+  },
   decisionItemRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: 10,
+    gap: 8,
     backgroundColor: 'transparent',
   },
   decisionDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginTop: 8,
+    marginTop: 6,
   },
   decisionText: {
-    flex: 1,
     fontSize: 13,
-    lineHeight: 20,
+    lineHeight: 18,
+    flex: 1,
   },
   notesHeaderCol: {
     flex: 1,
@@ -642,8 +852,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
     borderWidth: 1,
   },
   editNotesBtnText: {
@@ -652,25 +862,24 @@ const styles = StyleSheet.create({
   },
   saveNotesBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 12,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
   saveNotesBtnText: {
     fontSize: 12,
     fontWeight: '700',
   },
   notesInput: {
-    minHeight: 120,
-    borderRadius: 10,
+    borderRadius: 8,
     borderWidth: 1,
     padding: 12,
     fontSize: 13,
-    lineHeight: 20,
+    minHeight: 100,
     textAlignVertical: 'top',
   },
   markdownText: {
     fontSize: 13,
-    lineHeight: 21,
+    lineHeight: 20,
   },
   transcriptToggleRow: {
     flexDirection: 'row',
@@ -685,9 +894,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   transcriptContainer: {
-    borderRadius: 10,
     padding: 12,
-    marginTop: 4,
+    borderRadius: 8,
+    marginTop: 6,
   },
   transcriptText: {
     fontSize: 12,

@@ -137,47 +137,58 @@ export const MeetingCard = memo(function MeetingCard({
           )}
         </View>
 
-        {/* Action Button */}
-        {onRecordPress ? (
+        {/* Action Button Group */}
+        <View style={styles.actionBtnGroup}>
           <TouchableOpacity
-            onPress={onRecordPress}
-            style={[
-              styles.actionBtn,
-              {
-                backgroundColor: isCurrentlyRecording
-                  ? colors.error
-                  : hasRecording
-                  ? colors.surfaceContainerHigh
-                  : colors.primary,
-              },
-            ]}>
-            <Ionicons
-              name={isCurrentlyRecording ? 'radio' : hasRecording ? 'document-text-outline' : 'mic'}
-              size={13}
-              color={
-                isCurrentlyRecording
-                  ? colors.onError
-                  : hasRecording
-                  ? colors.text
-                  : colors.primaryText
-              }
-              style={{ marginRight: 5 }}
-            />
-            <Text
+            onPress={onPress}
+            style={[styles.briefingBtn, { backgroundColor: colors.surfaceContainer, borderColor: colors.cardBorder }]}>
+            <Ionicons name="sparkles" size={11} color={colors.primary} />
+            <Text style={[styles.briefingBtnText, { color: colors.primary }]}>
+              {meeting.briefing ? 'Briefing Ready' : 'Briefing'}
+            </Text>
+          </TouchableOpacity>
+
+          {onRecordPress ? (
+            <TouchableOpacity
+              onPress={onRecordPress}
               style={[
-                styles.actionBtnText,
+                styles.actionBtn,
                 {
-                  color: isCurrentlyRecording
+                  backgroundColor: isCurrentlyRecording
+                    ? colors.error
+                    : hasRecording
+                    ? colors.surfaceContainerHigh
+                    : colors.primary,
+                },
+              ]}>
+              <Ionicons
+                name={isCurrentlyRecording ? 'radio' : hasRecording ? 'document-text-outline' : 'mic'}
+                size={13}
+                color={
+                  isCurrentlyRecording
                     ? colors.onError
                     : hasRecording
                     ? colors.text
-                    : colors.primaryText,
-                },
-              ]}>
-              {isCurrentlyRecording ? 'Live' : hasRecording ? 'View Note' : 'Record'}
-            </Text>
-          </TouchableOpacity>
-        ) : null}
+                    : colors.primaryText
+                }
+                style={{ marginRight: 5 }}
+              />
+              <Text
+                style={[
+                  styles.actionBtnText,
+                  {
+                    color: isCurrentlyRecording
+                      ? colors.onError
+                      : hasRecording
+                      ? colors.text
+                      : colors.primaryText,
+                  },
+                ]}>
+                {isCurrentlyRecording ? 'Live' : hasRecording ? 'View Note' : 'Record'}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       </View>
     </Pressable>
   );
@@ -275,6 +286,25 @@ const styles = StyleSheet.create({
   },
   noAttendeesText: {
     fontSize: 11,
+  },
+  actionBtnGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  briefingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  briefingBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   actionBtn: {
     flexDirection: 'row',

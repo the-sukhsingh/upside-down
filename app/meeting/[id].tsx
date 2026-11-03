@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   StyleSheet,
   ScrollView,
@@ -10,6 +10,8 @@ import { Text, View } from '@/components/Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMeetingStore } from '@/store/meetingStore';
+import { BriefingCard } from '@/components/BriefingCard';
+import { briefingService } from '@/services/briefingService';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -22,10 +24,14 @@ export default function MeetingDetailScreen() {
 
   const {
     getMeetingById,
+    meetings,
     recordings,
     startRecordingSession,
+    setMeetingBriefing,
     deleteMeeting,
   } = useMeetingStore();
+
+  const [isGeneratingBriefing, setIsGeneratingBriefing] = useState(false);
 
   const meeting = getMeetingById(id);
 
@@ -48,6 +54,22 @@ export default function MeetingDetailScreen() {
   const handleStartRecord = () => {
     startRecordingSession(meeting.id, meeting.title);
     router.push('/record');
+  };
+
+  const handleGenerateBriefing = async () => {
+    setIsGeneratingBriefing(true);
+    try {
+      const brief = await briefingService.generateBriefing(
+        meeting,
+        meetings,
+        recordings
+      );
+      setMeetingBriefing(meeting.id, brief);
+    } catch (err) {
+      console.warn('Briefing notice:', err);
+    } finally {
+      setIsGeneratingBriefing(false);
+    }
   };
 
   const handleDelete = () => {
@@ -131,6 +153,40 @@ export default function MeetingDetailScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Feature 3: Before-You-Meet Briefing */}
+        {meeting.briefing ? (
+          <BriefingCard
+            briefing={meeting.briefing}
+            meetingTitle={meeting.title}
+            onRegenerate={handleGenerateBriefing}
+            isLoading={isGeneratingBriefing}
+          />
+        ) : (
+          <View style={[styles.briefingPromptCard, { backgroundColor: colors.surface, borderColor: colors.primary }]}>
+            <View style={styles.briefingPromptHeader}>
+              <View style={[styles.briefingIconCircle, { backgroundColor: colors.primaryContainer }]}>
+                <Ionicons name="sparkles" size={18} color={colors.primary} />
+              </View>
+              <View style={styles.briefingPromptTexts}>
+                <Text style={[styles.briefingPromptTitle, { color: colors.text }]}>Before-You-Meet Briefing</Text>
+                <Text style={[styles.briefingPromptSub, { color: colors.textSecondary }]}>
+                  Synthesize previous decisions, pending action items, and attention points before joining.
+                </Text>
+              </View>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleGenerateBriefing}
+              disabled={isGeneratingBriefing}
+              style={[styles.generateBriefingBtn, { backgroundColor: colors.primaryContainer, borderColor: colors.primary }]}>
+              <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
+              <Text style={[styles.generateBriefingBtnText, { color: colors.primary }]}>
+                {isGeneratingBriefing ? 'Compiling Intelligence...' : 'Generate Pre-Meeting Briefing'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Linked Meeting Notes */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -180,20 +236,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    gap: 12,
-  },
-  notFoundText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  backBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-  },
-  backBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
   },
   topBar: {
     flexDirection: 'row',
@@ -201,11 +243,14 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'transparent',
   },
   topBarTitle: {
     fontSize: 16,
     fontWeight: '700',
+    flex: 1,
+    textAlign: 'center',
   },
   iconBtn: {
     padding: 6,
@@ -216,16 +261,18 @@ const styles = StyleSheet.create({
   },
   card: {
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
+    padding: 16,
     gap: 12,
   },
   title: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.3,
   },
   metaRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: 16,
     backgroundColor: 'transparent',
   },
@@ -236,16 +283,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   metaText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: 13,
   },
   agendaBox: {
-    borderRadius: 10,
     padding: 12,
+    borderRadius: 10,
     gap: 4,
   },
   agendaHeading: {
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: '700',
     textTransform: 'uppercase',
   },
@@ -258,7 +304,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '700',
   },
   attendeesRow: {
@@ -272,24 +318,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
   },
   attendeeName: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   recordCta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    height: 44,
-    borderRadius: 22,
-    marginTop: 6,
+    paddingVertical: 14,
+    borderRadius: 12,
+    marginTop: 4,
   },
   recordCtaText: {
     fontSize: 14,
+    fontWeight: '700',
+  },
+  briefingPromptCard: {
+    borderRadius: 16,
+    borderWidth: 1.5,
+    padding: 16,
+    gap: 12,
+  },
+  briefingPromptHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: 'transparent',
+  },
+  briefingIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  briefingPromptTexts: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  briefingPromptTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  briefingPromptSub: {
+    fontSize: 12,
+    marginTop: 2,
+    lineHeight: 16,
+  },
+  generateBriefingBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 11,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  generateBriefingBtnText: {
+    fontSize: 13,
     fontWeight: '700',
   },
   emptyHint: {
@@ -298,9 +389,9 @@ const styles = StyleSheet.create({
   },
   linkedNoteItem: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
-    gap: 6,
+    gap: 4,
   },
   linkedNoteTop: {
     flexDirection: 'row',
@@ -310,11 +401,26 @@ const styles = StyleSheet.create({
   },
   linkedNoteTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
+    flex: 1,
   },
   linkedNoteSummary: {
     fontSize: 12,
     lineHeight: 16,
   },
+  notFoundText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 12,
+    marginBottom: 16,
+  },
+  backBtn: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+  },
+  backBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
-

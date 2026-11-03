@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import { useMeetingStore } from '@/store/meetingStore';
+import { PromiseRadarCard } from '@/components/PromiseRadarCard';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Meeting } from '@/types/meeting';
@@ -22,9 +23,11 @@ export default function HomeScreen() {
   const {
     meetings,
     recordings,
+    commitments,
     activeRecording,
     startRecordingSession,
     toggleActionItem,
+    toggleCommitment,
   } = useMeetingStore();
 
   // Active or upcoming meeting
@@ -143,6 +146,22 @@ export default function HomeScreen() {
             <Ionicons name="mic-circle" size={48} color={colors.primary} />
           </View>
         </View>
+
+        {/* Feature 1: Commitment Tracker ("Promise Radar") */}
+        {commitments.length > 0 && (
+          <PromiseRadarCard
+            commitments={commitments}
+            onToggleCommitment={toggleCommitment}
+            onPressEvidence={(startTime, label) => {
+              const matched = commitments.find((c) => c.evidence?.startTime === startTime);
+              if (matched?.recordingId) {
+                router.push(`/notes/${matched.recordingId}`);
+              }
+            }}
+            title="Promise Radar"
+            subtitle="I Owe vs They Owe Me commitments across all meetings"
+          />
+        )}
 
         {/* Pending Action Items Section */}
         {pendingActionItems.length > 0 && (
@@ -267,12 +286,21 @@ export default function HomeScreen() {
                     </Text>
                   </View>
 
-                  <TouchableOpacity
-                    onPress={() => handleStartMeetingRecord(m)}
-                    style={[styles.recordMeetingBtn, { backgroundColor: colors.primary }]}>
-                    <Ionicons name="mic" size={14} color={colors.primaryText} />
-                    <Text style={[styles.recordMeetingBtnText, { color: colors.primaryText }]}>Record</Text>
-                  </TouchableOpacity>
+                  <View style={styles.upcomingActionsRow}>
+                    <TouchableOpacity
+                      onPress={() => router.push(`/meeting/${m.id}`)}
+                      style={[styles.briefingPillBtn, { backgroundColor: colors.surfaceContainer, borderColor: colors.cardBorder }]}>
+                      <Ionicons name="sparkles" size={13} color={colors.primary} />
+                      <Text style={[styles.briefingPillBtnText, { color: colors.primary }]}>Briefing</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      onPress={() => handleStartMeetingRecord(m)}
+                      style={[styles.recordMeetingBtn, { backgroundColor: colors.primary }]}>
+                      <Ionicons name="mic" size={14} color={colors.primaryText} />
+                      <Text style={[styles.recordMeetingBtnText, { color: colors.primaryText }]}>Record</Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               ))}
             </View>
@@ -542,6 +570,25 @@ const styles = StyleSheet.create({
   },
   upcomingAttendees: {
     fontSize: 12,
+  },
+  upcomingActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  briefingPillBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  briefingPillBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
   },
   recordMeetingBtn: {
     flexDirection: 'row',
