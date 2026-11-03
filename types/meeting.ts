@@ -59,6 +59,7 @@ export interface Meeting {
   startTime: string; // e.g. "10:00 AM"
   endTime?: string;
   durationMinutes?: number;
+  meetingUrl?: string;
   attendees: string[];
   agenda?: string;
   notes?: string;
