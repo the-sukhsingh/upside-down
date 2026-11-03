@@ -87,9 +87,9 @@ export default function HomeScreen() {
         <View style={styles.topBarLeft}>
           <Text style={[styles.appTitle, { color: colors.text }]}>Meeting Note Taker</Text>
           <View style={[styles.privacyBadge, { backgroundColor: colors.surfaceContainer }]}>
-            <Ionicons name="lock-closed" size={11} color={colors.oliveText} />
-            <Text style={[styles.privacyBadgeText, { color: colors.oliveText }]}>
-              Offline Note Flow
+            <Ionicons name="flash" size={11} color={colors.primary} />
+            <Text style={[styles.privacyBadgeText, { color: colors.primary }]}>
+              Groq & Sarvam AI
             </Text>
           </View>
         </View>

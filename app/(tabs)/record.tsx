@@ -152,33 +152,28 @@ export default function RecordScreen() {
     const newRec = createRecordingEntry(audioUri, meetingTitle, meetingId);
 
     // 3. Initiate post-recording pipeline: Transcribe -> AI Notes
-    const sttProviderLabel =
-      settings.transcriptionProvider === 'groq'
-        ? `Groq (${settings.groqWhisperModel})`
-        : settings.transcriptionProvider === 'sarvam'
-        ? `Sarvam AI (${settings.sarvamSttModel})`
-        : `Local Whisper (${settings.whisperModel})`;
+    const isGroq = settings.activeEngine === 'groq';
+    const sttLabel = isGroq
+      ? `Groq (${settings.groqWhisperModel})`
+      : `Sarvam AI (${settings.sarvamSttModel})`;
 
     setProcessingState({
       isProcessing: true,
       currentStage: 'transcribing',
-      stageMessage: `Connecting to ${sttProviderLabel}...`,
+      stageMessage: `Transcribing audio with ${sttLabel}...`,
       progressPercent: 5,
       recordingId: newRec.id,
     });
 
     try {
-      // Step A: Speech-to-Text Transcription via Groq, Sarvam, or Local
+      // Step A: Speech-to-Text Transcription via Groq or Sarvam
       const transcriptionResult = await transcriptionService.transcribeAudio(audioUri, {
-        provider: settings.transcriptionProvider,
+        provider: settings.activeEngine,
         meetingTitle,
         durationSeconds: recordedDuration,
-        groqApiKey: settings.groqApiKey,
         groqWhisperModel: settings.groqWhisperModel,
-        sarvamApiKey: settings.sarvamApiKey,
         sarvamSttModel: settings.sarvamSttModel,
         sarvamLanguageCode: settings.sarvamLanguageCode,
-        modelId: settings.whisperModel,
         onProgress: (stage, percent) => {
           setProcessingState({
             currentStage: 'transcribing',
@@ -195,32 +190,24 @@ export default function RecordScreen() {
         transcriptSegments: transcriptionResult.segments,
       });
 
-      // Step B: AI Model Note Creation via Groq, Sarvam, or Local
-      const aiProviderLabel =
-        settings.aiModelProvider === 'groq'
-          ? `Groq (${settings.groqLlmModel})`
-          : settings.aiModelProvider === 'sarvam'
-          ? `Sarvam AI (${settings.sarvamLlmModel})`
-          : `Local SLM (${settings.activeSlmModel})`;
+      // Step B: AI Model Note Creation via Groq or Sarvam
+      const aiLabel = isGroq
+        ? `Groq (${settings.groqLlmModel})`
+        : `Sarvam AI (${settings.sarvamLlmModel})`;
 
       setProcessingState({
         currentStage: 'summarizing',
-        stageMessage: `Synthesizing meeting intelligence with ${aiProviderLabel}...`,
+        stageMessage: `Synthesizing meeting intelligence with ${aiLabel}...`,
         progressPercent: 52,
       });
 
       const noteResult = await aiNoteService.generateNotes(
         transcriptionResult.fullTranscript,
         {
-          provider: settings.aiModelProvider,
+          provider: settings.activeEngine,
           meetingTitle,
-          groqApiKey: settings.groqApiKey,
           groqLlmModel: settings.groqLlmModel,
-          sarvamApiKey: settings.sarvamApiKey,
           sarvamLlmModel: settings.sarvamLlmModel,
-          modelId: settings.activeSlmModel,
-          cloudApiKey: settings.cloudApiKey,
-          engineMode: settings.engineMode,
           onProgress: (stage, percent) => {
             setProcessingState({
               currentStage: 'summarizing',
@@ -330,9 +317,9 @@ export default function RecordScreen() {
         <View style={styles.headerTitleRow}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Meeting Note Taker</Text>
           <View style={[styles.privacyPill, { backgroundColor: colors.surfaceContainer }]}>
-            <Ionicons name="shield-checkmark" size={13} color={colors.oliveText} />
-            <Text style={[styles.privacyPillText, { color: colors.oliveText }]}>
-              Offline · Zero Data Fetching
+            <Ionicons name="flash" size={13} color={colors.primary} />
+            <Text style={[styles.privacyPillText, { color: colors.primary }]}>
+              Local Audio · Cloud AI
             </Text>
           </View>
         </View>
@@ -436,16 +423,12 @@ export default function RecordScreen() {
               <Ionicons name="sparkles" size={12} color={colors.primary} />
               <Text style={[styles.modelTagText, { color: colors.primary }]}>
                 {processingState.currentStage === 'transcribing'
-                  ? settings.transcriptionProvider === 'groq'
+                  ? settings.activeEngine === 'groq'
                     ? `Groq Whisper (${settings.groqWhisperModel})`
-                    : settings.transcriptionProvider === 'sarvam'
-                    ? `Sarvam AI (${settings.sarvamSttModel})`
-                    : `Whisper STT (${settings.whisperModel})`
-                  : settings.aiModelProvider === 'groq'
-                  ? `Groq (${settings.groqLlmModel})`
-                  : settings.aiModelProvider === 'sarvam'
-                  ? `Sarvam (${settings.sarvamLlmModel})`
-                  : `Model: ${settings.activeSlmModel}`}
+                    : `Sarvam Saaras (${settings.sarvamSttModel})`
+                  : settings.activeEngine === 'groq'
+                  ? `Groq Llama (${settings.groqLlmModel})`
+                  : `Sarvam AI (${settings.sarvamLlmModel})`}
               </Text>
             </View>
           </View>
@@ -606,24 +589,14 @@ export default function RecordScreen() {
                 </View>
                 <View style={styles.apiBadgeTextCol}>
                   <Text style={[styles.apiBadgeTitle, { color: colors.text }]}>
-                    {settings.transcriptionProvider === 'groq'
-                      ? 'Groq Whisper'
-                      : settings.transcriptionProvider === 'sarvam'
-                      ? 'Sarvam AI Saaras'
-                      : 'Local Whisper'}{' '}
-                    +{' '}
-                    {settings.aiModelProvider === 'groq'
-                      ? 'Groq Llama 3.3'
-                      : settings.aiModelProvider === 'sarvam'
-                      ? 'Sarvam 105B'
-                      : 'Local SLM'}
+                    {settings.activeEngine === 'groq'
+                      ? 'Groq Turbo Engine (Whisper + Llama 3.3)'
+                      : 'Sarvam AI Engine (Saaras v4 + Sarvam 105B)'}
                   </Text>
                   <Text style={[styles.apiBadgeSub, { color: colors.textSecondary }]}>
-                    {settings.transcriptionProvider === 'groq' && !settings.groqApiKey
-                      ? '⚠️ Groq Key needed · Tap to configure in Settings'
-                      : settings.transcriptionProvider === 'sarvam' && !settings.sarvamApiKey
-                      ? '⚠️ Sarvam Key needed · Tap to configure in Settings'
-                      : '⚡ High performance cloud endpoints active'}
+                    {settings.activeEngine === 'groq'
+                      ? '⚡ Sub-second cloud speech transcription & reasoning'
+                      : '🇮🇳 Multilingual Indian languages & regional speech'}
                   </Text>
                 </View>
               </View>
