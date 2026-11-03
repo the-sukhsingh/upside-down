@@ -43,7 +43,7 @@ Your task is to analyze this photo of meeting notes, whiteboard diagrams, handwr
 1. Transcribe all text accurately, deciphering handwriting, bullet points, and tables.
 2. Interpret workflow diagrams, arrows, mind maps, or system architectures.
 3. Identify all agreed key decisions, action items (with owner and priority), and commitments ("I owe" vs "They owe me").
-4. Return a valid JSON object with this EXACT schema:
+4. Return a valid, compact JSON object with this EXACT schema:
 {
   "title": "Concise, descriptive title for these notes",
   "executiveSummary": "Comprehensive 2-4 sentence executive overview of what was noted, decided, and sketched",
@@ -69,13 +69,13 @@ Your task is to analyze this photo of meeting notes, whiteboard diagrams, handwr
       "deadlinePhrase": "Deadline phrase"
     }
   ],
-  "rawNotes": "Full markdown transcription of all notes, whiteboard text, diagrams, and bullet points"
+  "rawNotes": "Compact markdown transcription of whiteboard text, diagrams, and bullet points"
 }
 Respond ONLY with the JSON object. Do not wrap in conversational markdown prose outside the JSON.`;
 
     const userPrompt = userTitle
-      ? `Meeting context/title: "${userTitle}". Digitalize and structure these notes into JSON:`
-      : 'Digitalize and structure these notes into JSON:';
+      ? `Meeting context/title: "${userTitle}". Digitalize and structure these notes into compact JSON:`
+      : 'Digitalize and structure these notes into compact JSON:';
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -100,13 +100,22 @@ Respond ONLY with the JSON object. Do not wrap in conversational markdown prose 
           },
         ],
         temperature: 0.2,
-        max_tokens: 3000,
+        max_tokens: 950,
       }),
     });
 
     if (!response.ok) {
       const errText = await response.text();
-      throw new Error(`Groq Vision API error (${response.status}): ${errText}`);
+      let userFriendlyMsg = `Groq Vision API error (${response.status})`;
+      try {
+        const parsedErr = JSON.parse(errText);
+        if (parsedErr.error?.message) {
+          userFriendlyMsg = parsedErr.error.message;
+        }
+      } catch {
+        userFriendlyMsg = errText;
+      }
+      throw new Error(userFriendlyMsg);
     }
 
     const data = await response.json();
@@ -261,3 +270,4 @@ ${parsed.rawNotes || 'No additional raw notes available.'}
 }
 
 export const visionNoteService = new VisionNoteService();
+

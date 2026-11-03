@@ -1,4 +1,5 @@
 import { ScrollViewStyleReset } from 'expo-router/html';
+import { StyleSheet } from 'react-native';
 import type { ReactNode } from 'react';
 
 // This file is web-only and used to configure the root HTML for every
@@ -19,21 +20,42 @@ export default function Root({ children }: { children: ReactNode }) {
         */}
         <ScrollViewStyleReset />
 
-        {/* Using raw CSS styles as an escape-hatch to ensure the background color never flickers in dark-mode. */}
-        <style dangerouslySetInnerHTML={{ __html: responsiveBackground }} />
-        {/* Add any additional <head> elements that you want globally available on web... */}
+        {/* Inject react-native-web atomic stylesheet to ensure all styles apply properly on web */}
+        <style
+          id="react-native-stylesheet"
+          dangerouslySetInnerHTML={{
+            __html: (StyleSheet as any).getSheet().textContent,
+          }}
+        />
+
+        {/* Global CSS styles and dark-mode overrides */}
+        <style dangerouslySetInnerHTML={{ __html: globalWebStyles }} />
       </head>
       <body>{children}</body>
     </html>
   );
 }
 
-const responsiveBackground = `
+const globalWebStyles = `
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+#root {
+  display: flex;
+  flex-direction: column;
+}
 body {
   background-color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 @media (prefers-color-scheme: dark) {
   body {
     background-color: #000;
   }
-}`;
+}
+`;
