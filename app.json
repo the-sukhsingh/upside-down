@@ -39,7 +39,14 @@
       "expo-status-bar",
       "expo-web-browser",
       "expo-audio",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow MeetaNotes to access your photos to digitalize whiteboard and notebook meeting notes.",
+          "cameraPermission": "Allow MeetaNotes to access your camera to capture and digitalize meeting notes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
