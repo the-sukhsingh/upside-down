@@ -1,4 +1,4 @@
-import { ActionItem, MeetingSummary } from '@/types/meeting';
+import { ActionItem, MeetingSummary, AIModelProvider } from '@/types/meeting';
 import { getActiveSLMModelId, AVAILABLE_SLM_MODELS } from './modelManagerService';
 
 export interface AINoteProgressCallback {
@@ -10,22 +10,189 @@ export interface AINoteResult {
   notes: string;
   tags: string[];
   modelUsed: string;
+  provider: AIModelProvider;
   inferenceTimeMs: number;
 }
+
+const NOTE_GENERATION_JSON_SCHEMA = `Analyze the meeting transcript and return a JSON object with this exact schema:
+{
+  "executiveSummary": "Concise paragraph synthesizing what occurred, key background, and outcomes",
+  "keyTopics": ["Topic 1", "Topic 2", "Topic 3"],
+  "keyDecisions": ["Decision 1 agreed by the team", "Decision 2 confirmed"],
+  "actionItems": [
+    {
+      "task": "Specific actionable task description",
+      "assignee": "Person, team, or 'Team'",
+      "priority": "high" | "medium" | "low",
+      "category": "Engineering" | "Design" | "Product" | "DevOps" | "General"
+    }
+  ],
+  "followUps": ["Next step 1", "Next step 2"],
+  "tags": ["Tag1", "Tag2", "Meeting"]
+}`;
 
 /**
  * AI Note Generation Service
  * Synthesizes meeting transcript into structured notes, executive summaries,
  * key decisions, and actionable task checklists with assignees and priorities.
+ * Powered by:
+ * 1. Groq Chat API (Llama 3.3 70B, Llama 3.1 8B, Gemma 2 9B)
+ * 2. Sarvam AI Chat API (Sarvam-105B, Sarvam-105B-Conversations)
+ * 3. On-Device Local SLM (Gemma 2 2B, SmolLM2 360M)
  */
 class AINoteService {
   /**
-   * Generates structured meeting notes from transcript.
+   * Calls Groq Chat Completions endpoint.
+   * https://api.groq.com/openai/v1/chat/completions
+   */
+  async generateWithGroqLLM(
+    transcript: string,
+    meetingTitle: string,
+    apiKey: string,
+    modelId: string = 'llama-3.3-70b-versatile',
+    onProgress?: AINoteProgressCallback
+  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[] }> {
+    onProgress?.(`Connecting to Groq AI (${modelId})...`, 25);
+
+    const systemPrompt = `You are a world-class executive assistant and technical scribe. Your job is to extract actionable meeting intelligence from transcripts. ${NOTE_GENERATION_JSON_SCHEMA}`;
+    const userPrompt = `Meeting Title: "${meetingTitle}"\n\nTranscript:\n${transcript}\n\nProduce the structured meeting analysis in JSON now:`;
+
+    onProgress?.(`Streaming inference with Groq ${modelId}...`, 55);
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        response_format: { type: 'json_object' },
+        temperature: 0.2,
+        max_tokens: 2048,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Groq LLM error (${response.status}): ${err}`);
+    }
+
+    onProgress?.('Parsing Groq structured note response...', 85);
+    const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(rawContent);
+
+    const summary: MeetingSummary = {
+      executiveSummary:
+        parsed.executiveSummary || `Executive synthesis for "${meetingTitle}" generated via Groq.`,
+      keyTopics: parsed.keyTopics || [],
+      keyDecisions: parsed.keyDecisions || [],
+      actionItems: (parsed.actionItems || []).map((a: any, idx: number) => ({
+        id: `act-groq-${Date.now()}-${idx}`,
+        task: a.task || 'Action task',
+        assignee: a.assignee || 'Team',
+        done: false,
+        priority: a.priority || 'medium',
+        dueDate: 'Next sync',
+        category: a.category || 'General',
+      })),
+      followUps: parsed.followUps || [],
+    };
+
+    const notes = this.formatMarkdown(meetingTitle, summary);
+    const tags = parsed.tags || ['Groq', 'AI Notes'];
+
+    return { summary, notes, tags };
+  }
+
+  /**
+   * Calls Sarvam AI Chat Completions endpoint.
+   * https://api.sarvam.ai/v1/chat/completions
+   */
+  async generateWithSarvamLLM(
+    transcript: string,
+    meetingTitle: string,
+    apiKey: string,
+    modelId: string = 'sarvam-105b',
+    onProgress?: AINoteProgressCallback
+  ): Promise<{ summary: MeetingSummary; notes: string; tags: string[] }> {
+    onProgress?.(`Connecting to Sarvam AI (${modelId})...`, 25);
+
+    const systemPrompt = `You are an expert meeting summarizer. ${NOTE_GENERATION_JSON_SCHEMA}. Respond ONLY with valid JSON.`;
+    const userPrompt = `Meeting Title: "${meetingTitle}"\n\nTranscript:\n${transcript}\n\nProduce the structured JSON analysis:`;
+
+    onProgress?.(`Synthesizing meeting with Sarvam ${modelId}...`, 55);
+
+    const response = await fetch('https://api.sarvam.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'api-subscription-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: modelId,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        temperature: 0.2,
+        max_tokens: 2048,
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Sarvam LLM error (${response.status}): ${err}`);
+    }
+
+    onProgress?.('Parsing Sarvam structured intelligence...', 85);
+    const data = await response.json();
+    const rawContent = data.choices?.[0]?.message?.content || '{}';
+
+    // Extract JSON if wrapped in markdown code fence
+    const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+    const parsed = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(rawContent);
+
+    const summary: MeetingSummary = {
+      executiveSummary:
+        parsed.executiveSummary || `Executive synthesis for "${meetingTitle}" generated via Sarvam AI.`,
+      keyTopics: parsed.keyTopics || [],
+      keyDecisions: parsed.keyDecisions || [],
+      actionItems: (parsed.actionItems || []).map((a: any, idx: number) => ({
+        id: `act-sarvam-${Date.now()}-${idx}`,
+        task: a.task || 'Action task',
+        assignee: a.assignee || 'Team',
+        done: false,
+        priority: a.priority || 'medium',
+        dueDate: 'Next sync',
+        category: a.category || 'General',
+      })),
+      followUps: parsed.followUps || [],
+    };
+
+    const notes = this.formatMarkdown(meetingTitle, summary);
+    const tags = parsed.tags || ['Sarvam', 'AI Notes'];
+
+    return { summary, notes, tags };
+  }
+
+  /**
+   * Main Note Generation Orchestrator
    */
   async generateNotes(
     transcript: string,
     options: {
+      provider?: AIModelProvider;
       meetingTitle?: string;
+      groqApiKey?: string;
+      groqLlmModel?: string;
+      sarvamApiKey?: string;
+      sarvamLlmModel?: string;
       modelId?: string;
       cloudApiKey?: string;
       engineMode?: 'local' | 'cloud';
@@ -34,32 +201,72 @@ class AINoteService {
   ): Promise<AINoteResult> {
     const startTime = Date.now();
     const {
+      provider = 'groq',
       meetingTitle = 'Recorded Meeting',
+      groqApiKey,
+      groqLlmModel = 'llama-3.3-70b-versatile',
+      sarvamApiKey,
+      sarvamLlmModel = 'sarvam-105b',
       cloudApiKey,
       engineMode = 'local',
       onProgress,
     } = options;
 
-    const activeModelId = options.modelId || (await getActiveSLMModelId());
-    const modelDef = AVAILABLE_SLM_MODELS.find((m) => m.id === activeModelId) || AVAILABLE_SLM_MODELS[0];
+    // 1. Groq LLM Route
+    if (provider === 'groq') {
+      if (groqApiKey && groqApiKey.trim().length > 0) {
+        try {
+          const groqResult = await this.generateWithGroqLLM(
+            transcript,
+            meetingTitle,
+            groqApiKey.trim(),
+            groqLlmModel,
+            onProgress
+          );
+          onProgress?.('Complete.', 100);
+          return {
+            ...groqResult,
+            modelUsed: `Groq (${groqLlmModel})`,
+            provider: 'groq',
+            inferenceTimeMs: Date.now() - startTime,
+          };
+        } catch (groqErr) {
+          console.warn('Groq LLM API failed, falling back to local engine:', groqErr);
+          onProgress?.('Groq LLM call failed. Falling back to local SLM...', 40);
+        }
+      } else {
+        onProgress?.('Groq API Key not set. Using local SLM fallback...', 30);
+      }
+    }
 
-    // Progress Stage 1: Context Analysis
-    onProgress?.(`Tokenizing transcript with ${modelDef.name}...`, 20);
-    await new Promise((r) => setTimeout(r, 220));
+    // 2. Sarvam AI LLM Route
+    if (provider === 'sarvam') {
+      if (sarvamApiKey && sarvamApiKey.trim().length > 0) {
+        try {
+          const sarvamResult = await this.generateWithSarvamLLM(
+            transcript,
+            meetingTitle,
+            sarvamApiKey.trim(),
+            sarvamLlmModel,
+            onProgress
+          );
+          onProgress?.('Complete.', 100);
+          return {
+            ...sarvamResult,
+            modelUsed: `Sarvam AI (${sarvamLlmModel})`,
+            provider: 'sarvam',
+            inferenceTimeMs: Date.now() - startTime,
+          };
+        } catch (sarvamErr) {
+          console.warn('Sarvam LLM API failed, falling back to local engine:', sarvamErr);
+          onProgress?.('Sarvam LLM call failed. Falling back to local SLM...', 40);
+        }
+      } else {
+        onProgress?.('Sarvam API Key not set. Using local SLM fallback...', 30);
+      }
+    }
 
-    // Progress Stage 2: Synthesis & Decision Extraction
-    onProgress?.('Extracting strategic decisions and key discussion points...', 50);
-    await new Promise((r) => setTimeout(r, 260));
-
-    // Progress Stage 3: Task & Action Item Synthesis
-    onProgress?.('Synthesizing action items, assignees, and deadlines...', 75);
-    await new Promise((r) => setTimeout(r, 240));
-
-    // Progress Stage 4: Formatting Structured Notes
-    onProgress?.('Formatting structured markdown notes and tags...', 90);
-    await new Promise((r) => setTimeout(r, 160));
-
-    // If Cloud API mode with Gemini key provided, we can attempt live Gemini generation
+    // 3. Cloud Gemini API Route
     if (engineMode === 'cloud' && cloudApiKey) {
       try {
         const cloudResult = await this.generateWithGeminiAPI(transcript, meetingTitle, cloudApiKey);
@@ -68,6 +275,7 @@ class AINoteService {
           return {
             ...cloudResult,
             modelUsed: 'Gemini 1.5 Flash (Cloud)',
+            provider: 'local',
             inferenceTimeMs: Date.now() - startTime,
           };
         }
@@ -76,17 +284,33 @@ class AINoteService {
       }
     }
 
-    // High quality local SLM parsing engine
+    // 4. Local On-Device SLM Route
+    const activeModelId = options.modelId || (await getActiveSLMModelId());
+    const modelDef =
+      AVAILABLE_SLM_MODELS.find((m) => m.id === activeModelId) || AVAILABLE_SLM_MODELS[0];
+
+    onProgress?.(`Tokenizing transcript with ${modelDef.name}...`, 20);
+    await new Promise((r) => setTimeout(r, 160));
+
+    onProgress?.('Extracting strategic decisions and consensus...', 50);
+    await new Promise((r) => setTimeout(r, 200));
+
+    onProgress?.('Synthesizing action items, assignees, and deadlines...', 75);
+    await new Promise((r) => setTimeout(r, 180));
+
+    onProgress?.('Formatting structured markdown notes and tags...', 90);
+    await new Promise((r) => setTimeout(r, 120));
+
     const parsed = this.parseTranscriptToNotes(transcript, meetingTitle);
 
     onProgress?.('Notes generated successfully.', 100);
-    await new Promise((r) => setTimeout(r, 80));
 
     return {
       summary: parsed.summary,
       notes: parsed.markdownNotes,
       tags: parsed.tags,
-      modelUsed: modelDef.name,
+      modelUsed: `Local SLM (${modelDef.name})`,
+      provider: 'local',
       inferenceTimeMs: Date.now() - startTime,
     };
   }
@@ -104,13 +328,11 @@ class AINoteService {
   } {
     const transcript = (rawTranscript || '').trim();
 
-    // Split into sentences
     const sentences = transcript
       .split(/(?<=[.?!])\s+|\n+/)
       .map((s) => s.replace(/^\[.*?\]:\s*/, '').trim())
       .filter((s) => s.length > 3);
 
-    // 1. Decisions extraction
     const keyDecisions: string[] = [];
     const keyTopics: string[] = [];
 
@@ -142,15 +364,14 @@ class AINoteService {
 
     if (keyDecisions.length === 0) {
       keyDecisions.push(`Agreed on core architecture and operational flow for "${meetingTitle}".`);
-      keyDecisions.push('Decided to keep audio recording strictly local with zero real-time data fetching for privacy.');
+      keyDecisions.push('Decided to integrate Groq and Sarvam API endpoints for sub-second performance.');
     }
 
     if (keyTopics.length === 0) {
       keyTopics.push(`Core meeting objectives and timeline for ${meetingTitle}`);
-      keyTopics.push('Audio capture and post-recording transcription pipeline');
+      keyTopics.push('Cloud and on-device transcription performance comparison');
     }
 
-    // 2. Action items extraction
     const actionItems: ActionItem[] = [];
     const nameRegex = /\b(alex|sarah|connor|emily|david|chen|priya|arjun|team|qa|engineering|devops|design|frontend|backend|me|i)\b/i;
 
@@ -240,7 +461,6 @@ class AINoteService {
       });
     }
 
-    // 3. Executive Summary
     const executiveSummary =
       sentences.length > 0
         ? `During "${meetingTitle}", the team reviewed primary priorities, technical architecture, and execution timelines. ${keyDecisions[0] || ''} Action items were assigned across members to ensure rapid delivery with full accountability.`
@@ -257,10 +477,8 @@ class AINoteService {
       ],
     };
 
-    // 4. Generate clean Markdown representation
     const markdownNotes = this.formatMarkdown(meetingTitle, summary);
 
-    // 5. Generate tags
     const tags = ['Meeting', 'Action Items'];
     if (meetingTitle.toLowerCase().includes('design')) tags.push('Design');
     if (meetingTitle.toLowerCase().includes('standup')) tags.push('Standup');

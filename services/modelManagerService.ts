@@ -161,3 +161,4 @@ export async function setActiveSLMModelId(modelId: string): Promise<void> {
     // Ignore error
   }
 }
+

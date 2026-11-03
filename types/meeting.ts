@@ -68,15 +68,36 @@ export interface Meeting {
   createdAt: string;
 }
 
+export type TranscriptionProvider = 'groq' | 'sarvam' | 'local';
+export type AIModelProvider = 'groq' | 'sarvam' | 'local';
+
 export interface UserSettings {
   userName: string;
   userEmail: string;
   engineMode: 'local' | 'cloud';
+
+  // Providers selection
+  transcriptionProvider: TranscriptionProvider;
+  aiModelProvider: AIModelProvider;
+
+  // Groq API Settings
+  groqApiKey?: string;
+  groqWhisperModel: 'whisper-large-v3-turbo' | 'whisper-large-v3' | 'distil-whisper-large-v3-en';
+  groqLlmModel: 'llama-3.3-70b-versatile' | 'llama-3.1-8b-instant' | 'gemma2-9b-it' | 'mixtral-8x7b-32768';
+
+  // Sarvam API Settings
+  sarvamApiKey?: string;
+  sarvamSttModel: 'saaras:v4' | 'saaras:v3';
+  sarvamLanguageCode: string; // 'unknown' | 'en-IN' | 'hi-IN' | etc.
+  sarvamLlmModel: 'sarvam-105b' | 'sarvam-105b-conversations';
+
+  // Local / On-Device Fallback Settings
   whisperModel: 'ggml-tiny.en.bin' | 'ggml-base.en.bin' | 'ggml-small.en.bin';
   whisperModelDownloaded: boolean;
   activeSlmModel: string;
   slmModelDownloaded: boolean;
   cloudApiKey?: string;
+
   autoTranscribe: boolean;
   autoSummarize: boolean;
   audioQuality: 'high' | 'standard';
