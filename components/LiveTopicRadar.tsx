@@ -98,6 +98,15 @@ export function LiveTopicRadar({
             });
           }
         },
+        onMatchUpdated: (updatedMatch) => {
+          setMatches((prev) =>
+            prev.map((m) =>
+              m.recordingId === updatedMatch.recordingId
+                ? { ...m, aiSynthesis: updatedMatch.aiSynthesis }
+                : m
+            )
+          );
+        },
       });
     }
 
@@ -110,7 +119,17 @@ export function LiveTopicRadar({
   const handleSelectTopic = async (topic: string) => {
     setIsSearching(true);
     try {
-      const found = await contextRecallService.triggerTopicSearch(topic, currentMeetingId);
+      const found = await contextRecallService.triggerTopicSearch(topic, currentMeetingId, {
+        onMatchUpdated: (updatedMatch) => {
+          setMatches((prev) =>
+            prev.map((m) =>
+              m.recordingId === updatedMatch.recordingId
+                ? { ...m, aiSynthesis: updatedMatch.aiSynthesis }
+                : m
+            )
+          );
+        },
+      });
       if (found.length > 0) {
         setMatches((prev) => {
           const combined = [...found, ...prev];
