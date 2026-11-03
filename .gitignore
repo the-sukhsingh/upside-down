@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native & Build Artifacts
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.keystore
+
+# Debug & Logs
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.*
+*.log
+
+# Environment & Secrets
+.env
+.env.*
+.env*.local
+!.env.example
+*.pem
+
+# AI Models & Large Binaries
+models/
+*.gguf
+*.bin
+*.onnx
+
+# User Audio Recordings & Media
+recordings/
+*.wav
+*.mp3
+*.m4a
+*.aac
+
+# IDE & OS Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~
+
+# Continuous Native Generation
+/ios
+/android
+ios/
+android/
