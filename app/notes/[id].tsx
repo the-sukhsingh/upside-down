@@ -671,7 +671,6 @@ const styles = StyleSheet.create({
   markdownText: {
     fontSize: 13,
     lineHeight: 21,
-    whiteSpace: 'pre-wrap',
   },
   transcriptToggleRow: {
     flexDirection: 'row',
