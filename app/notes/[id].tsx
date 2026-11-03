@@ -17,6 +17,8 @@ import { RecordingPlayer, SeekTarget } from '@/components/RecordingPlayer';
 import { EvidenceTag } from '@/components/EvidenceTag';
 import { PromiseRadarCard } from '@/components/PromiseRadarCard';
 import { AutoFollowUpModal } from '@/components/AutoFollowUpModal';
+import { IdeaCollisionCard } from '@/components/IdeaCollisionCard';
+import { ideaCollisionService } from '@/services/ideaCollisionService';
 import { ToastNotification, ToastConfig } from '@/components/ToastNotification';
 import { calendarTaskService } from '@/services/calendarTaskService';
 import { ActionItem } from '@/types/meeting';
@@ -33,6 +35,11 @@ export default function NoteDetailScreen() {
   const {
     recordings,
     commitments,
+    ideaCollisions,
+    isCollidingIdeas,
+    dismissIdeaCollision,
+    saveIdeaCollision,
+    setIdeaCollisionExperimenting,
     toggleActionItem,
     toggleCommitment,
     updateRecordingNotes,
@@ -47,6 +54,7 @@ export default function NoteDetailScreen() {
   const [showFullTranscript, setShowFullTranscript] = useState(false);
   const [seekTarget, setSeekTarget] = useState<SeekTarget | null>(null);
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [isSynthesizing, setIsSynthesizing] = useState(false);
 
   if (!recording) {
     return (
@@ -79,6 +87,36 @@ export default function NoteDetailScreen() {
     recording.summary?.commitments && recording.summary.commitments.length > 0
       ? recording.summary.commitments
       : commitments.filter((c) => c.recordingId === recording.id);
+
+  // Active Idea Collisions connected to this note
+  const noteCollisions = ideaCollisions.filter(
+    (c) =>
+      c.status !== 'dismissed' &&
+      c.sourceNotes.some((s) => s.recordingId === recording.id)
+  );
+
+  const handleSynthesizeNoteCollisions = async () => {
+    setIsSynthesizing(true);
+    try {
+      await ideaCollisionService.generateCollisions();
+      setToast({
+        type: 'success',
+        title: 'Connections Updated!',
+        message: 'Synthesized latent mechanisms with other recorded thoughts.',
+        duration: 3500,
+      });
+    } catch (err) {
+      console.error('Synthesis error:', err);
+      setToast({
+        type: 'error',
+        title: 'Synthesis Notice',
+        message: 'Could not complete collision synthesis at this time.',
+        duration: 3000,
+      });
+    } finally {
+      setIsSynthesizing(false);
+    }
+  };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -333,6 +371,80 @@ export default function NoteDetailScreen() {
             </Text>
           </View>
         )}
+
+        {/* Feature: Idea Collisions for this note */}
+        <View style={styles.collisionsNoteSection}>
+          <View style={styles.collisionsNoteHeaderRow}>
+            <View style={styles.collisionsNoteTitleCol}>
+              <View style={styles.collisionsNoteBadgeHeader}>
+                <Ionicons name="flash" size={17} color={colors.primary} />
+                <Text style={[styles.collisionsNoteTitle, { color: colors.text }]}>
+                  Idea Collisions ({noteCollisions.length})
+                </Text>
+              </View>
+              <Text style={[styles.collisionsNoteSubtitle, { color: colors.textSecondary }]}>
+                Cross-domain connections connecting this note with thoughts from past weeks
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleSynthesizeNoteCollisions}
+              disabled={isSynthesizing || isCollidingIdeas}
+              style={[
+                styles.noteCollideBtn,
+                {
+                  backgroundColor: colors.primaryContainer,
+                  opacity: isSynthesizing || isCollidingIdeas ? 0.7 : 1,
+                },
+              ]}
+            >
+              <Ionicons name="sparkles" size={13} color={colors.primary} />
+              <Text style={[styles.noteCollideBtnText, { color: colors.primary }]}>
+                {isSynthesizing || isCollidingIdeas ? 'Colliding...' : 'Synthesize'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {noteCollisions.length === 0 ? (
+            <View
+              style={[
+                styles.emptyCollisionsBox,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.cardBorder,
+                },
+              ]}
+            >
+              <Ionicons name="git-merge-outline" size={26} color={colors.primary} />
+              <Text style={[styles.emptyCollisionsTitle, { color: colors.text }]}>
+                No Collisions Discovered Yet
+              </Text>
+              <Text style={[styles.emptyCollisionsText, { color: colors.textSecondary }]}>
+                MeetaNotes can scan your past recordings to find shared mechanisms and new ideas connecting this thought.
+              </Text>
+              <TouchableOpacity
+                onPress={handleSynthesizeNoteCollisions}
+                disabled={isSynthesizing || isCollidingIdeas}
+                style={[styles.collideNowBtn, { backgroundColor: colors.primary }]}
+              >
+                <Ionicons name="flash" size={14} color="#FFF" />
+                <Text style={styles.collideNowBtnText}>
+                  {isSynthesizing || isCollidingIdeas ? 'Synthesizing...' : 'Collide With Other Notes'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            noteCollisions.map((collision) => (
+              <IdeaCollisionCard
+                key={collision.id}
+                collision={collision}
+                onDismiss={(id) => dismissIdeaCollision(id)}
+                onSave={(id) => saveIdeaCollision(id)}
+                onStartExperiment={(id) => setIdeaCollisionExperimenting(id)}
+              />
+            ))
+          )}
+        </View>
 
         {/* Feature 5 & Action Items Checklist */}
         <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -902,5 +1014,79 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+  },
+  collisionsNoteSection: {
+    marginBottom: 16,
+    backgroundColor: 'transparent',
+  },
+  collisionsNoteHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    backgroundColor: 'transparent',
+  },
+  collisionsNoteTitleCol: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  collisionsNoteBadgeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  collisionsNoteTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  collisionsNoteSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  noteCollideBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  noteCollideBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  emptyCollisionsBox: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyCollisionsTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: 4,
+  },
+  emptyCollisionsText: {
+    fontSize: 12,
+    lineHeight: 17,
+    textAlign: 'center',
+    maxWidth: 280,
+  },
+  collideNowBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 18,
+    marginTop: 4,
+  },
+  collideNowBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFF',
   },
 });

@@ -11,6 +11,9 @@ import { Text, View } from '@/components/Themed';
 import { useMeetingStore } from '@/store/meetingStore';
 import { PromiseRadarCard } from '@/components/PromiseRadarCard';
 import { DigitalizeNotesModal } from '@/components/DigitalizeNotesModal';
+import { IdeaCollisionCard } from '@/components/IdeaCollisionCard';
+import { IdeaCollisionModal } from '@/components/IdeaCollisionModal';
+import { ideaCollisionService } from '@/services/ideaCollisionService';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Meeting } from '@/types/meeting';
@@ -22,12 +25,18 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
 
   const [digitalizeModalVisible, setDigitalizeModalVisible] = useState(false);
+  const [collisionModalVisible, setCollisionModalVisible] = useState(false);
 
   const {
     meetings,
     recordings,
     commitments,
     activeRecording,
+    ideaCollisions,
+    isCollidingIdeas,
+    dismissIdeaCollision,
+    saveIdeaCollision,
+    setIdeaCollisionExperimenting,
     startRecordingSession,
     toggleActionItem,
     toggleCommitment,
@@ -165,6 +174,69 @@ export default function HomeScreen() {
             subtitle="I Owe vs They Owe Me commitments across all meetings"
           />
         )}
+
+        {/* Feature 2: Idea Collision Engine */}
+        <View style={styles.collisionSection}>
+          <View style={styles.collisionHeaderRow}>
+            <View style={styles.collisionTitleCol}>
+              <View style={styles.collisionBadgeHeader}>
+                <Ionicons name="flash" size={16} color={colors.primary} />
+                <Text style={[styles.collisionMainTitle, { color: colors.text }]}>
+                  Idea Collision Engine
+                </Text>
+              </View>
+              <Text style={[styles.collisionSubTitle, { color: colors.textSecondary }]}>
+                Cross-domain connections between thoughts recorded weeks apart
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => setCollisionModalVisible(true)}
+              style={[
+                styles.collisionExploreBtn,
+                { backgroundColor: colors.primaryContainer },
+              ]}>
+              <Ionicons name="sparkles" size={13} color={colors.primary} />
+              <Text
+                style={[
+                  styles.collisionExploreBtnText,
+                  { color: colors.primary },
+                ]}>
+                Explore ({ideaCollisions.length})
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {ideaCollisions.length === 0 ? (
+            <TouchableOpacity
+              activeOpacity={0.8}
+              onPress={() => {
+                ideaCollisionService.generateCollisions();
+              }}
+              style={[
+                styles.emptyCollisionPrompt,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.cardBorder,
+                },
+              ]}>
+              <Ionicons name="sparkles-outline" size={24} color={colors.primary} />
+              <Text style={[styles.emptyCollisionText, { color: colors.text }]}>
+                No collisions active. Tap to synthesize new connections!
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            ideaCollisions.slice(0, 1).map((collision) => (
+              <IdeaCollisionCard
+                key={collision.id}
+                collision={collision}
+                onDismiss={(id) => dismissIdeaCollision(id)}
+                onSave={(id) => saveIdeaCollision(id)}
+                onStartExperiment={(id) => setIdeaCollisionExperimenting(id)}
+              />
+            ))
+          )}
+        </View>
 
         {/* Pending Action Items Section */}
         {pendingActionItems.length > 0 && (
@@ -336,11 +408,71 @@ export default function HomeScreen() {
         visible={digitalizeModalVisible}
         onClose={() => setDigitalizeModalVisible(false)}
       />
+
+      {/* Idea Collision Modal */}
+      <IdeaCollisionModal
+        visible={collisionModalVisible}
+        onClose={() => setCollisionModalVisible(false)}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  collisionSection: {
+    marginBottom: 20,
+    backgroundColor: 'transparent',
+  },
+  collisionHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    backgroundColor: 'transparent',
+  },
+  collisionTitleCol: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  collisionBadgeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'transparent',
+  },
+  collisionMainTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  collisionSubTitle: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  collisionExploreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  collisionExploreBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  emptyCollisionPrompt: {
+    borderRadius: 14,
+    padding: 20,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyCollisionText: {
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   floatingCameraFab: {
     position: 'absolute',
     right: 20,

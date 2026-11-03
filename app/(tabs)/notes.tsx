@@ -4,16 +4,19 @@ import {
   ScrollView,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Text, View } from '@/components/Themed';
 import { useMeetingStore } from '@/store/meetingStore';
+import { IdeaCollisionCard } from '@/components/IdeaCollisionCard';
+import { ideaCollisionService } from '@/services/ideaCollisionService';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
-type FilterCategory = 'all' | 'actions' | 'audio';
+type FilterCategory = 'all' | 'collisions' | 'actions' | 'audio';
 
 export default function NotesScreen() {
   const router = useRouter();
@@ -21,11 +24,43 @@ export default function NotesScreen() {
   const colors = Colors[theme];
   const insets = useSafeAreaInsets();
 
-  const { recordings } = useMeetingStore();
+  const {
+    recordings,
+    ideaCollisions,
+    isCollidingIdeas,
+    dismissIdeaCollision,
+    saveIdeaCollision,
+    setIdeaCollisionExperimenting,
+  } = useMeetingStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<FilterCategory>('all');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [isGeneratingCollisions, setIsGeneratingCollisions] = useState(false);
+
+  const handleCollideIdeas = async () => {
+    setIsGeneratingCollisions(true);
+    try {
+      await ideaCollisionService.generateCollisions();
+    } catch (err) {
+      console.error('Error generating collisions:', err);
+    } finally {
+      setIsGeneratingCollisions(false);
+    }
+  };
+
+  const filteredCollisions = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return ideaCollisions;
+    return ideaCollisions.filter(
+      (c) =>
+        c.title.toLowerCase().includes(query) ||
+        c.sharedMechanism.toLowerCase().includes(query) ||
+        c.whyUseful.toLowerCase().includes(query) ||
+        c.overlappingConcepts.some((t) => t.toLowerCase().includes(query)) ||
+        c.sourceNotes.some((s) => s.meetingTitle.toLowerCase().includes(query))
+    );
+  }, [ideaCollisions, searchQuery]);
 
   const allTags = useMemo(() => {
     const tagSet = new Set<string>();
@@ -129,9 +164,16 @@ export default function NotesScreen() {
 
         {/* Filter Tabs */}
         <View style={styles.filterTabsRow}>
-          {(['all', 'actions', 'audio'] as FilterCategory[]).map((tab) => {
+          {(['all', 'collisions', 'actions', 'audio'] as FilterCategory[]).map((tab) => {
             const isSelected = selectedFilter === tab;
-            const label = tab === 'all' ? 'All Notes' : tab === 'actions' ? 'Has Tasks' : 'Audio';
+            const label =
+              tab === 'all'
+                ? 'All Notes'
+                : tab === 'collisions'
+                ? `Collisions ⚡ (${ideaCollisions.length})`
+                : tab === 'actions'
+                ? 'Has Tasks'
+                : 'Audio';
             return (
               <TouchableOpacity
                 key={tab}
@@ -193,41 +235,168 @@ export default function NotesScreen() {
         )}
       </View>
 
-      {/* Notes List */}
+      {/* Notes / Collisions List */}
       <ScrollView
         contentContainerStyle={[styles.notesList, { paddingBottom: insets.bottom + 90 }]}
         showsVerticalScrollIndicator={false}>
-        {filteredRecordings.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
-            <Text style={[styles.emptyTitle, { color: colors.text }]}>No Notes Found</Text>
-            <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
-              {searchQuery
-                ? 'Try a different search term or clear filters.'
-                : 'Tap Record to capture your first meeting audio and generate notes.'}
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push('/record')}
-              style={[styles.recordCtaBtn, { backgroundColor: colors.primary }]}>
-              <Ionicons name="mic" size={16} color={colors.primaryText} />
-              <Text style={[styles.recordCtaBtnText, { color: colors.primaryText }]}>Record Note</Text>
-            </TouchableOpacity>
+        {selectedFilter === 'collisions' ? (
+          <View style={styles.collisionsContainer}>
+            {/* Engine Header Card */}
+            <View
+              style={[
+                styles.collisionHeaderCard,
+                {
+                  backgroundColor: colors.surface,
+                  borderColor: colors.cardBorder,
+                },
+              ]}>
+              <View style={styles.collisionHeaderCardLeft}>
+                <View
+                  style={[
+                    styles.collisionIconBox,
+                    { backgroundColor: colors.primaryContainer },
+                  ]}
+                >
+                  <Ionicons name="flash" size={18} color={colors.primary} />
+                </View>
+                <View style={styles.collisionHeaderTextCol}>
+                  <Text style={[styles.collisionHeaderCardTitle, { color: colors.text }]}>
+                    Idea Collision Engine
+                  </Text>
+                  <Text
+                    style={[
+                      styles.collisionHeaderCardSub,
+                      { color: colors.textSecondary },
+                    ]}
+                  >
+                    Latent cross-domain connections & testable experiments
+                  </Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={handleCollideIdeas}
+                disabled={isGeneratingCollisions || isCollidingIdeas}
+                style={[
+                  styles.collideActionBtn,
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: isGeneratingCollisions || isCollidingIdeas ? 0.7 : 1,
+                  },
+                ]}
+              >
+                {isGeneratingCollisions || isCollidingIdeas ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                )}
+                <Text style={styles.collideActionBtnText}>
+                  {isGeneratingCollisions || isCollidingIdeas ? 'Colliding...' : 'Collide'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {filteredCollisions.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="git-compare-outline" size={48} color={colors.textMuted} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                  No Idea Collisions Found
+                </Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  {searchQuery
+                    ? 'No collisions match your search query.'
+                    : 'Tap "Collide" to synthesize new connections between your thoughts.'}
+                </Text>
+                <TouchableOpacity
+                  onPress={handleCollideIdeas}
+                  disabled={isGeneratingCollisions || isCollidingIdeas}
+                  style={[styles.recordCtaBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="flash" size={16} color={colors.primaryText} />
+                  <Text style={[styles.recordCtaBtnText, { color: colors.primaryText }]}>
+                    Synthesize Now
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              filteredCollisions.map((collision) => (
+                <IdeaCollisionCard
+                  key={collision.id}
+                  collision={collision}
+                  onDismiss={(id) => dismissIdeaCollision(id)}
+                  onSave={(id) => saveIdeaCollision(id)}
+                  onStartExperiment={(id) => setIdeaCollisionExperimenting(id)}
+                />
+              ))
+            )}
           </View>
         ) : (
-          filteredRecordings.map((rec) => {
-            const actionCount = rec.summary?.actionItems?.length || 0;
-            const completedActionCount =
-              rec.summary?.actionItems?.filter((a) => a.done).length || 0;
-
-            return (
+          <>
+            {/* Quick banner linking to Idea Collisions */}
+            {selectedFilter === 'all' && !searchQuery && ideaCollisions.length > 0 && (
               <TouchableOpacity
-                key={rec.id}
                 activeOpacity={0.8}
-                onPress={() => router.push(`/notes/${rec.id}`)}
+                onPress={() => setSelectedFilter('collisions')}
                 style={[
-                  styles.noteCard,
-                  { backgroundColor: colors.surface, borderColor: colors.border },
-                ]}>
+                  styles.quickCollisionBanner,
+                  {
+                    backgroundColor:
+                      theme === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
+                    borderColor:
+                      theme === 'dark' ? 'rgba(99, 102, 241, 0.35)' : '#C7D2FE',
+                  },
+                ]}
+              >
+                <View style={styles.quickCollisionLeft}>
+                  <Ionicons name="flash" size={16} color={colors.primary} />
+                  <View style={styles.quickCollisionTextCol}>
+                    <Text style={[styles.quickCollisionTitle, { color: colors.primary }]}>
+                      {ideaCollisions.length} Idea Collisions Discovered
+                    </Text>
+                    <Text style={[styles.quickCollisionSub, { color: colors.textSecondary }]}>
+                      Tap to view synthesized connections across your past notes
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="arrow-forward" size={16} color={colors.primary} />
+              </TouchableOpacity>
+            )}
+
+            {filteredRecordings.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="document-text-outline" size={48} color={colors.textMuted} />
+                <Text style={[styles.emptyTitle, { color: colors.text }]}>No Notes Found</Text>
+                <Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>
+                  {searchQuery
+                    ? 'Try a different search term or clear filters.'
+                    : 'Tap Record to capture your first meeting audio and generate notes.'}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/record')}
+                  style={[styles.recordCtaBtn, { backgroundColor: colors.primary }]}
+                >
+                  <Ionicons name="mic" size={16} color={colors.primaryText} />
+                  <Text style={[styles.recordCtaBtnText, { color: colors.primaryText }]}>
+                    Record Note
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              filteredRecordings.map((rec) => {
+                const actionCount = rec.summary?.actionItems?.length || 0;
+                const completedActionCount =
+                  rec.summary?.actionItems?.filter((a) => a.done).length || 0;
+
+                return (
+                  <TouchableOpacity
+                    key={rec.id}
+                    activeOpacity={0.8}
+                    onPress={() => router.push(`/notes/${rec.id}`)}
+                    style={[
+                      styles.noteCard,
+                      { backgroundColor: colors.surface, borderColor: colors.border },
+                    ]}
+                  >
                 {/* Meta row */}
                 <View style={styles.noteCardTopRow}>
                   <Text style={[styles.noteDate, { color: colors.textSecondary }]}>
@@ -296,6 +465,8 @@ export default function NotesScreen() {
               </TouchableOpacity>
             );
           })
+        )}
+          </>
         )}
       </ScrollView>
     </View>
@@ -434,6 +605,86 @@ const styles = StyleSheet.create({
   actionsBadgeText: {
     fontSize: 11,
     fontWeight: '600',
+  },
+  quickCollisionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  quickCollisionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  quickCollisionTextCol: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  quickCollisionTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  quickCollisionSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  collisionsContainer: {
+    gap: 12,
+    backgroundColor: 'transparent',
+  },
+  collisionHeaderCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 4,
+  },
+  collisionHeaderCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  collisionIconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  collisionHeaderTextCol: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  collisionHeaderCardTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  collisionHeaderCardSub: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  collideActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 16,
+  },
+  collideActionBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   emptyContainer: {
     alignItems: 'center',
