@@ -3,6 +3,7 @@ import { StyleSheet, Animated } from 'react-native';
 import { View } from './Themed';
 import { useColorScheme } from './useColorScheme';
 import Colors from '@/constants/Colors';
+import { brand } from '@/constants/theme';
 
 interface WaveformVisualizerProps {
   isRecording: boolean;
@@ -80,7 +81,7 @@ export function WaveformVisualizer({
                   ? isPaused
                     ? colors.warning
                     : colors.primary
-                  : '#3F3F46', // zinc 700 idle
+                  : brand.zinc[700], // zinc 700 idle
               },
             ]}
           />

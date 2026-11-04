@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(11, 11, 15, 0.6)',
   },
   backdrop: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   sheetContainer: {
     borderTopLeftRadius: 24,

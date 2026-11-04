@@ -541,7 +541,7 @@ export default function NoteDetailScreen() {
                                   item.priority === 'high'
                                     ? colors.coral
                                     : item.priority === 'medium'
-                                    ? '#5C4500'
+                                    ? colors.warning
                                     : colors.textSecondary,
                                 fontWeight: '700',
                               },
@@ -590,7 +590,7 @@ export default function NoteDetailScreen() {
           <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.sectionHeaderRow}>
               <View style={[styles.sectionIconBg, { backgroundColor: colors.tertiaryContainer }]}>
-                <Ionicons name="git-commit-outline" size={16} color="#5C4500" />
+                <Ionicons name="git-commit-outline" size={16} color={colors.warning} />
               </View>
               <Text style={[styles.sectionHeading, { color: colors.text }]}>Key Decisions</Text>
             </View>
