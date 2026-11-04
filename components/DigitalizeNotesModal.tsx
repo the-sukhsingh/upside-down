@@ -344,12 +344,12 @@ export function DigitalizeNotesModal({ visible, onClose }: DigitalizeNotesModalP
                 {/* Primary Action Button */}
                 <TouchableOpacity
                   onPress={handleViewNote}
-                  style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
-                  <Ionicons name="document-text" size={18} color={colors.primaryText} />
-                  <Text style={[styles.actionBtnText, { color: colors.primaryText }]}>
+                  style={[styles.actionBtn, { backgroundColor: colors.primaryTonal }]}>
+                  <Ionicons name="document-text" size={18} color={colors.onPrimaryTonal} />
+                  <Text style={[styles.actionBtnText, { color: colors.onPrimaryTonal }]}>
                     View Digitalized Note & Tasks
                   </Text>
-                  <Ionicons name="arrow-forward" size={16} color={colors.primaryText} />
+                  <Ionicons name="arrow-forward" size={16} color={colors.onPrimaryTonal} />
                 </TouchableOpacity>
 
                 {/* Secondary Button */}
@@ -395,9 +395,9 @@ export function DigitalizeNotesModal({ visible, onClose }: DigitalizeNotesModalP
                   <Image source={{ uri: selectedImageUri }} style={styles.previewImage} />
                   <TouchableOpacity
                     onPress={handleResetForAnother}
-                    style={[styles.retakeFloatingBtn, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
-                    <Ionicons name="sync" size={14} color="#FFF" />
-                    <Text style={styles.retakeText}>Retake</Text>
+                    style={[styles.retakeFloatingBtn, { backgroundColor: colors.surfaceContainerHighest }]}>
+                    <Ionicons name="sync" size={14} color={colors.text} />
+                    <Text style={[styles.retakeText, { color: colors.text }]}>Retake</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -425,12 +425,12 @@ export function DigitalizeNotesModal({ visible, onClose }: DigitalizeNotesModalP
                 {/* Digitalize CTA */}
                 <TouchableOpacity
                   onPress={handleDigitalize}
-                  style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
-                  <Ionicons name="sparkles" size={18} color={colors.primaryText} />
-                  <Text style={[styles.actionBtnText, { color: colors.primaryText }]}>
+                  style={[styles.actionBtn, { backgroundColor: colors.primaryTonal }]}>
+                  <Ionicons name="sparkles" size={18} color={colors.onPrimaryTonal} />
+                  <Text style={[styles.actionBtnText, { color: colors.onPrimaryTonal }]}>
                     Digitalize with Groq Vision
                   </Text>
-                  <Ionicons name="arrow-forward" size={16} color={colors.primaryText} />
+                  <Ionicons name="arrow-forward" size={16} color={colors.onPrimaryTonal} />
                 </TouchableOpacity>
 
                 {/* Retake/Cancel Link */}
@@ -564,10 +564,10 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    backgroundColor: 'rgba(11, 11, 15, 0.6)',
   },
   backdrop: {
-    ...StyleSheet.absoluteFill,
+    ...StyleSheet.absoluteFillObject,
   },
   sheetContainer: {
     borderTopLeftRadius: 24,
@@ -754,21 +754,20 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   retakeText: {
-    color: '#FFF',
     fontSize: 12,
     fontWeight: '600',
   },
   actionBtn: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 14,
+    borderRadius: 10,
   },
   actionBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 14,
+    fontWeight: '600',
   },
   cancelLink: {
     alignItems: 'center',
@@ -869,12 +868,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   secondaryBtn: {
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
   },
   secondaryBtnText: {

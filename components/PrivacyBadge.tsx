@@ -21,14 +21,14 @@ export function PrivacyBadge({ compact = false }: PrivacyBadgeProps) {
         style={({ pressed }) => [
           styles.container,
           {
-            backgroundColor: theme === 'dark' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(16, 185, 129, 0.1)',
-            borderColor: theme === 'dark' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.25)',
+            backgroundColor: colors.secondaryContainer,
+            borderColor: colors.secondary,
             opacity: pressed ? 0.8 : 1,
           },
         ]}>
-        <View style={styles.pulseDot} />
-        <Ionicons name="shield-checkmark" size={13} color="#10B981" style={{ marginRight: 5 }} />
-        <Text style={styles.label}>
+        <View style={[styles.pulseDot, { backgroundColor: colors.secondary }]} />
+        <Ionicons name="shield-checkmark" size={13} color={colors.secondary} style={{ marginRight: 5 }} />
+        <Text style={[styles.label, { color: colors.secondary }]}>
           {compact ? '100% On-Device' : '🔒 100% On-Device / Zero-Cloud'}
         </Text>
       </Pressable>
@@ -39,10 +39,10 @@ export function PrivacyBadge({ compact = false }: PrivacyBadgeProps) {
         animationType="fade"
         onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.modalHeader}>
-              <View style={styles.shieldIconWrap}>
-                <Ionicons name="shield-checkmark" size={26} color="#10B981" />
+              <View style={[styles.shieldIconWrap, { backgroundColor: colors.secondaryContainer }]}>
+                <Ionicons name="shield-checkmark" size={26} color={colors.secondary} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.modalTitle, { color: colors.text }]}>Local-First Privacy Guarantee</Text>
@@ -54,31 +54,31 @@ export function PrivacyBadge({ compact = false }: PrivacyBadgeProps) {
 
             <View style={styles.infoList}>
               <View style={styles.infoRow}>
-                <Ionicons name="mic-off-outline" size={18} color="#10B981" style={styles.infoIcon} />
+                <Ionicons name="mic-off-outline" size={18} color={colors.secondary} style={styles.infoIcon} />
                 <Text style={[styles.infoText, { color: colors.text }]}>
-                  <Text style={{ fontWeight: '700' }}>Offline Audio:</Text> Raw audio is recorded directly into 16kHz PCM WAV format and stored in your device&apos;s sandbox.
+                  <Text style={{ fontWeight: '600' }}>Offline Audio:</Text> Raw audio is recorded directly into 16kHz PCM WAV format and stored in your device&apos;s sandbox.
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="hardware-chip-outline" size={18} color="#10B981" style={styles.infoIcon} />
+                <Ionicons name="hardware-chip-outline" size={18} color={colors.secondary} style={styles.infoIcon} />
                 <Text style={[styles.infoText, { color: colors.text }]}>
-                  <Text style={{ fontWeight: '700' }}>Local Whisper STT:</Text> Audio is transcribed natively via C++ bindings without any remote server transmission.
+                  <Text style={{ fontWeight: '600' }}>Local Whisper STT:</Text> Audio is transcribed natively via C++ bindings without any remote server transmission.
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Ionicons name="airplane-outline" size={18} color="#10B981" style={styles.infoIcon} />
+                <Ionicons name="airplane-outline" size={18} color={colors.secondary} style={styles.infoIcon} />
                 <Text style={[styles.infoText, { color: colors.text }]}>
-                  <Text style={{ fontWeight: '700' }}>Air-Gap Capable:</Text> Works seamlessly in airplane mode. You hold 100% ownership of your meeting intelligence.
+                  <Text style={{ fontWeight: '600' }}>Air-Gap Capable:</Text> Works seamlessly in airplane mode. You hold 100% ownership of your meeting intelligence.
                 </Text>
               </View>
             </View>
 
             <TouchableOpacity
               onPress={() => setModalVisible(false)}
-              style={[styles.closeButton, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.closeButtonText, { color: colors.primaryText }]}>Got it</Text>
+              style={[styles.closeButton, { backgroundColor: colors.primaryTonal }]}>
+              <Text style={[styles.closeButtonText, { color: colors.onPrimaryTonal }]}>Got it</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -101,18 +101,16 @@ const styles = StyleSheet.create({
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: '#10B981',
     marginRight: 6,
   },
   label: {
     fontSize: 11,
     fontWeight: '600',
-    color: '#10B981',
     letterSpacing: 0.2,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(11, 11, 15, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -120,14 +118,9 @@ const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
     maxWidth: 420,
-    borderRadius: 28,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -139,13 +132,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(13, 148, 136, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalTitle: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '600',
     lineHeight: 22,
   },
   modalSubtitle: {
@@ -170,12 +162,13 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   closeButton: {
-    paddingVertical: 12,
-    borderRadius: 20,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   closeButtonText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });

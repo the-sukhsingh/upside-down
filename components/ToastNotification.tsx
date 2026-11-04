@@ -57,19 +57,19 @@ export function ToastNotification({
   const isError = toast.type === 'error';
 
   const accentColor = isProcessing
-    ? colors.coral
+    ? colors.primary
     : isSuccess
-    ? '#10B981'
+    ? colors.secondary
     : isError
-    ? '#EF4444'
-    : colors.tint;
+    ? colors.error
+    : colors.primary;
 
   const iconBg = isProcessing
-    ? colors.coralLight
+    ? colors.primaryContainer
     : isSuccess
-    ? '#D1FAE5'
+    ? colors.secondaryContainer
     : isError
-    ? '#FEE2E2'
+    ? colors.errorContainer
     : colors.surfaceContainer;
 
   return (
@@ -82,9 +82,8 @@ export function ToastNotification({
         style={[
           styles.toastCard,
           {
-            backgroundColor: theme === 'dark' ? '#1E2024' : '#FFFFFF',
+            backgroundColor: colors.surfaceRaised,
             borderColor: colors.border,
-            shadowColor: '#000000',
           },
         ]}>
         <View style={[styles.iconCircle, { backgroundColor: iconBg }]}>
@@ -151,15 +150,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     maxWidth: 420,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     paddingVertical: 12,
     paddingHorizontal: 14,
     gap: 12,
-    elevation: 8,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
   },
   iconCircle: {
     width: 32,
@@ -174,8 +169,7 @@ const styles = StyleSheet.create({
   },
   toastTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+    fontWeight: '600',
     letterSpacing: -0.1,
   },
   toastMessage: {
@@ -183,7 +177,6 @@ const styles = StyleSheet.create({
     lineHeight: 15,
     marginTop: 2,
     fontWeight: '400',
-    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
   },
   actionBtn: {
     paddingHorizontal: 10,
@@ -192,8 +185,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontSize: 12,
-    fontWeight: '700',
-    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif' }),
+    fontWeight: '600',
   },
   dismissBtn: {
     padding: 4,

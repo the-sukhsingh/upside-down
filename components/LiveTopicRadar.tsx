@@ -187,7 +187,7 @@ export function LiveTopicRadar({
               style={[
                 styles.pulseRing,
                 {
-                  borderColor: isRecording && !isPaused ? '#10B981' : '#F5C242',
+                  borderColor: isRecording && !isPaused ? colors.secondary : colors.warning,
                   transform: [{ scale: pulseAnim }],
                   opacity: isRecording && !isPaused ? 0.6 : 0,
                 },
@@ -196,7 +196,7 @@ export function LiveTopicRadar({
             <View
               style={[
                 styles.pulseCore,
-                { backgroundColor: isRecording && !isPaused ? '#10B981' : '#F5C242' },
+                { backgroundColor: isRecording && !isPaused ? colors.secondary : colors.warning },
               ]}
             />
           </View>
@@ -302,7 +302,6 @@ export function LiveTopicRadar({
                   {
                     backgroundColor: colors.surface,
                     borderColor: isPinned ? colors.primary : colors.cardBorder,
-                    shadowColor: '#000000',
                   },
                 ]}>
                 {/* Card Header */}
@@ -314,10 +313,10 @@ export function LiveTopicRadar({
                         {
                           backgroundColor:
                             match.relevanceScore >= 0.7
-                              ? '#10B981'
+                              ? colors.secondary
                               : match.relevanceScore >= 0.5
-                              ? '#3B82F6'
-                              : '#F59E0B',
+                              ? colors.primary
+                              : colors.warning,
                         },
                       ]}
                     />
@@ -326,7 +325,7 @@ export function LiveTopicRadar({
                         {match.meetingTitle}
                       </Text>
                       <Text style={[styles.cardMetaText, { color: colors.textSecondary }]}>
-                        {match.date} · Topic: <Text style={{ fontWeight: '700', color: colors.primary }}>#{match.matchedTopic}</Text>
+                        {match.date} · Topic: <Text style={{ fontWeight: '600', color: colors.primary }}>#{match.matchedTopic}</Text>
                       </Text>
                     </View>
                   </View>
@@ -357,7 +356,7 @@ export function LiveTopicRadar({
                   <View style={styles.bulletRow}>
                     <Ionicons name="checkmark-circle" size={14} color={colors.primary} />
                     <Text style={[styles.bulletText, { color: colors.text }]} numberOfLines={2}>
-                      <Text style={{ fontWeight: '700' }}>Decision: </Text>
+                      <Text style={{ fontWeight: '600' }}>Decision: </Text>
                       {match.keyDecisions[0]}
                     </Text>
                   </View>
@@ -366,9 +365,9 @@ export function LiveTopicRadar({
                 {/* Top Open Commitment Bullet */}
                 {match.openCommitments.length > 0 && (
                   <View style={styles.bulletRow}>
-                    <Ionicons name="shield-checkmark" size={14} color="#E06D53" />
+                    <Ionicons name="shield-checkmark" size={14} color={match.openCommitments[0].direction === 'they_owe_me' ? colors.secondary : colors.primary} />
                     <Text style={[styles.bulletText, { color: colors.text }]} numberOfLines={2}>
-                      <Text style={{ fontWeight: '700', color: '#E06D53' }}>
+                      <Text style={{ fontWeight: '600', color: match.openCommitments[0].direction === 'they_owe_me' ? colors.secondary : colors.primary }}>
                         {match.openCommitments[0].direction === 'they_owe_me' ? 'Owed to you: ' : 'You owe: '}
                       </Text>
                       "{match.openCommitments[0].promise}"
@@ -558,7 +557,7 @@ const styles = StyleSheet.create({
   topicChip: {
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
   },
   topicChipText: {
@@ -572,13 +571,9 @@ const styles = StyleSheet.create({
   },
   contextCard: {
     borderRadius: 14,
-    borderWidth: 1.2,
+    borderWidth: 1,
     padding: 12,
     gap: 8,
-    elevation: 3,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -604,7 +599,7 @@ const styles = StyleSheet.create({
   },
   cardMeetingTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   cardMetaText: {
     fontSize: 11,
@@ -619,7 +614,7 @@ const styles = StyleSheet.create({
   },
   aiFlashText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
     lineHeight: 16,
     flex: 1,
   },
@@ -649,12 +644,12 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 14,
+    borderRadius: 10,
     borderWidth: 1,
   },
   peekBtnText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   pinActionBtn: {
     flexDirection: 'row',
@@ -662,11 +657,11 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 14,
+    borderRadius: 10,
   },
   pinActionBtnText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   pinnedTrayBadge: {
     flexDirection: 'row',
