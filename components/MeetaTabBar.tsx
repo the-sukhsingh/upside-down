@@ -272,15 +272,15 @@ const MeetaTabItem = memo(function MeetaTabItem({
             <Animated.View style={[styles.iconAbsolute, inactiveIconStyle]}>
               <Ionicons
                 name={config.inactiveIcon}
-                size={22}
-                color={colors.textMuted}
+                size={route.name === 'record' ? 24 : 22}
+                color={route.name === 'record' ? colors.primary : colors.textFaint}
               />
             </Animated.View>
             <Animated.View style={[styles.iconAbsolute, activeIconStyle]}>
               <Ionicons
                 name={config.activeIcon}
-                size={19}
-                color="#FFFFFF"
+                size={route.name === 'record' ? 22 : 19}
+                color={colors.onPrimaryTonal}
               />
             </Animated.View>
           </View>
@@ -289,7 +289,7 @@ const MeetaTabItem = memo(function MeetaTabItem({
             <Text
               numberOfLines={1}
               ellipsizeMode="clip"
-              style={styles.activeCapsuleText}>
+              style={[styles.activeCapsuleText, { color: colors.onPrimaryTonal }]}>
               {label}
             </Text>
           </Animated.View>
@@ -370,7 +370,7 @@ export function MeetaTabBar({
       style={[
         styles.dockWrapper,
         {
-          bottom: Math.max(insets.bottom, 12),
+          bottom: insets.bottom + 16,
         },
       ]}>
       <View
@@ -390,7 +390,7 @@ export function MeetaTabBar({
             styles.activePill,
             animatedPillStyle,
             {
-              backgroundColor: colors.primary,
+              backgroundColor: colors.primaryTonal,
             },
           ]}
         />
@@ -472,22 +472,22 @@ export function MeetaTabBar({
 const styles = StyleSheet.create({
   dockWrapper: {
     position: 'absolute',
-    left: 0,
-    right: 0,
+    left: 20,
+    right: 20,
     alignItems: 'center',
     zIndex: 999,
   },
   dockContainer: {
     position: 'relative',
-    height: 64,
-    borderRadius: 36,
-    width: '92%',
+    height: 56,
+    borderRadius: 999,
+    width: '100%',
     maxWidth: 420,
     borderWidth: 1,
-    elevation: 10,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 18,
+    elevation: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
     overflow: 'hidden',
     ...(Platform.OS === 'web'
       ? {
@@ -499,22 +499,18 @@ const styles = StyleSheet.create({
   },
   activePill: {
     position: 'absolute',
-    top: 10,
+    top: 8,
     left: PADDING_H,
-    height: 44,
-    borderRadius: 22,
-    shadowColor: '#E06D53',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    height: 40,
+    borderRadius: 999,
+    elevation: 0,
     zIndex: 1,
   },
   tabItemContainer: {
     position: 'absolute',
     top: 0,
     left: PADDING_H,
-    height: 64,
+    height: 56,
     zIndex: 2,
   },
   tabPressable: {
@@ -528,8 +524,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    height: 44,
-    borderRadius: 22,
+    height: 40,
+    borderRadius: 999,
   },
   iconWrapper: {
     width: 24,
@@ -548,10 +544,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeCapsuleText: {
-    color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: -0.2,
-    fontFamily: Platform.select({ ios: 'System', android: 'sans-serif-medium' }),
+    fontFamily: Platform.select({ web: 'Geist, sans-serif', default: 'Geist-SemiBold' }),
   },
 });

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { StyleSheet, Animated } from 'react-native';
 import { View } from './Themed';
 import { useColorScheme } from './useColorScheme';
+import Colors from '@/constants/Colors';
 
 interface WaveformVisualizerProps {
   isRecording: boolean;
@@ -17,6 +18,7 @@ export function WaveformVisualizer({
   barCount = 28,
 }: WaveformVisualizerProps) {
   const theme = useColorScheme();
+  const colors = Colors[theme];
 
   // Create animated values for each bar using stable state initializer
   const [animatedValues] = useState(() =>
@@ -76,11 +78,9 @@ export function WaveformVisualizer({
                 height: animHeight,
                 backgroundColor: isRecording
                   ? isPaused
-                    ? '#F5C242'
-                    : '#E06D53'
-                  : theme === 'dark'
-                  ? '#44474E'
-                  : '#E0DCD6',
+                    ? colors.warning
+                    : colors.primary
+                  : '#3F3F46', // zinc 700 idle
               },
             ]}
           />
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   bar: {
-    width: 3.5,
-    borderRadius: 2,
+    width: 3,
+    borderRadius: 1.5,
   },
 });

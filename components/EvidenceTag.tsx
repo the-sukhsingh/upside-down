@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import { Ionicons } from '@expo/vector-icons';
 import Colors from '@/constants/Colors';
@@ -10,13 +10,38 @@ interface EvidenceTagProps {
   evidence?: EvidenceCitation;
   onPressEvidence?: (startTime: number, label: string) => void;
   compact?: boolean;
+  isPlaying?: boolean;
 }
 
-export function EvidenceTag({ evidence, onPressEvidence, compact = false }: EvidenceTagProps) {
+export function EvidenceTag({
+  evidence,
+  onPressEvidence,
+  compact = false,
+  isPlaying = false,
+}: EvidenceTagProps) {
   const theme = useColorScheme();
   const colors = Colors[theme];
 
-  if (!evidence || evidence.startTime === undefined) return null;
+  const hasTimestamp = evidence && evidence.startTime !== undefined;
+
+  if (!evidence) return null;
+
+  if (!hasTimestamp) {
+    return (
+      <View
+        style={[
+          styles.container,
+          {
+            backgroundColor: 'transparent',
+            borderColor: colors.borderStrong,
+            borderStyle: 'dashed',
+          },
+        ]}>
+        <Ionicons name="time-outline" size={12} color={colors.textFaint} />
+        <Text style={[styles.text, { color: colors.textFaint }]}>No timestamp</Text>
+      </View>
+    );
+  }
 
   const formatSecs = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -35,6 +60,8 @@ export function EvidenceTag({ evidence, onPressEvidence, compact = false }: Evid
     }
   };
 
+  const currentTextColor = isPlaying ? colors.onPrimaryTonal : colors.primary;
+
   return (
     <TouchableOpacity
       activeOpacity={0.7}
@@ -42,18 +69,17 @@ export function EvidenceTag({ evidence, onPressEvidence, compact = false }: Evid
       style={[
         styles.container,
         {
-          backgroundColor: colors.surfaceContainerLow,
-          borderColor: colors.primary,
+          backgroundColor: isPlaying ? colors.primaryTonal : colors.primarySoft,
+          borderColor: isPlaying ? colors.primaryTonal : colors.primarySoft,
         },
-        compact && styles.compactContainer,
       ]}
       accessibilityRole="button"
       accessibilityLabel={`Listen to audio evidence at ${timeLabel}`}>
-      <Ionicons name="volume-medium" size={compact ? 11 : 13} color={colors.primary} />
-      <Text style={[styles.text, { color: colors.primary }, compact && styles.compactText]}>
+      <Ionicons name="volume-medium" size={12} color={currentTextColor} />
+      <Text style={[styles.text, { color: currentTextColor }]}>
         {timeLabel}
       </Text>
-      <Ionicons name="arrow-forward-circle" size={11} color={colors.primary} />
+      <Ionicons name="arrow-forward-circle" size={12} color={currentTextColor} />
     </TouchableOpacity>
   );
 }
@@ -63,25 +89,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+    height: 26,
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: 999,
     borderWidth: 1,
     alignSelf: 'flex-start',
   },
-  compactContainer: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    gap: 3,
-  },
   text: {
-    fontSize: 11,
-    fontWeight: '700',
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: '500',
+    fontFamily: Platform.select({ web: 'Geist Mono, monospace', default: 'GeistMono-Medium' }),
     fontVariant: ['tabular-nums'],
-  },
-  compactText: {
-    fontSize: 10,
   },
 });
 
