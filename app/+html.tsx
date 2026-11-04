@@ -37,6 +37,7 @@ export default function Root({ children }: { children: ReactNode }) {
 }
 
 const globalWebStyles = `
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&display=swap');
 @font-face {
   font-family: 'ionicons';
   src: url('/fonts/Ionicons.ttf') format('truetype'),
@@ -64,14 +65,10 @@ html, body, #root {
   flex-direction: column;
 }
 body {
-  background-color: #fff;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: #0B0B0F;
+  color: #F4F4F5;
+  font-family: 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
 }
 `;

@@ -17,10 +17,12 @@ export type TextProps = ThemeProps & RNTextProps;
 export type ViewProps = ThemeProps & RNViewProps;
 
 const DEFAULT_FONT = Platform.select({
-  ios: undefined,
-  android: 'sans-serif',
-  default: undefined,
+  web: 'Geist, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  default: 'Geist-Regular',
 });
+
+// Helper regex to detect Indian script characters (Devanagari, Bengali, Gurmukhi, Gujarati, Oriya, Tamil, Telugu, Kannada, Malayalam)
+const INDIC_REGEX = /[\u0900-\u0D7F]/;
 
 export function useThemeColor(
   props: { light?: string; dark?: string },
@@ -37,10 +39,30 @@ export function useThemeColor(
 }
 
 export function Text(props: TextProps) {
-  const { style, lightColor, darkColor, ...otherProps } = props;
+  const { style, lightColor, darkColor, children, ...otherProps } = props;
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
-  return <DefaultText style={[{ color, fontFamily: DEFAULT_FONT }, style]} {...otherProps} />;
+  const hasIndic = typeof children === 'string' && INDIC_REGEX.test(children);
+  const selectedFont = hasIndic
+    ? Platform.select({
+        web: 'Noto Sans, -apple-system, sans-serif',
+        android: 'sans-serif',
+        default: 'System',
+      })
+    : DEFAULT_FONT;
+
+  return (
+    <DefaultText
+      style={[
+        { color, fontFamily: selectedFont },
+        hasIndic ? { lineHeight: ((style as any)?.lineHeight || 20) + 2 } : null,
+        style,
+      ]}
+      {...otherProps}
+    >
+      {children}
+    </DefaultText>
+  );
 }
 
 export function View(props: ViewProps) {

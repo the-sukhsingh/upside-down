@@ -1,4 +1,15 @@
-import { useFonts } from 'expo-font';
+import {
+  useFonts,
+  Geist_400Regular,
+  Geist_500Medium,
+  Geist_600SemiBold,
+  Geist_700Bold,
+} from '@expo-google-fonts/geist';
+import {
+  GeistMono_400Regular,
+  GeistMono_500Medium,
+  GeistMono_600SemiBold,
+} from '@expo-google-fonts/geist-mono';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
@@ -49,6 +60,20 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
+    'Geist-Regular': Geist_400Regular,
+    'Geist-Medium': Geist_500Medium,
+    'Geist-SemiBold': Geist_600SemiBold,
+    'Geist-Bold': Geist_700Bold,
+    'GeistMono-Regular': GeistMono_400Regular,
+    'GeistMono-Medium': GeistMono_500Medium,
+    'GeistMono-SemiBold': GeistMono_600SemiBold,
+    Geist_400Regular,
+    Geist_500Medium,
+    Geist_600SemiBold,
+    Geist_700Bold,
+    GeistMono_400Regular,
+    GeistMono_500Medium,
+    GeistMono_600SemiBold,
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...Ionicons.font,
   });

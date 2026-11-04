@@ -1,9 +1,9 @@
 /**
- * MeetaNotes UI Kit Color Tokens (Lokanaka Studio)
- * Warm Terracotta Coral, Forest Moss Olive, Warm Amber, and Organic Cream surfaces.
- * Full semantic token architecture with tonal surface containers,
- * primary/secondary/tertiary pairs, and dynamic light/dark values.
+ * MeetaNotes UI Kit Color Tokens
+ * Tailored to strict Tailwind Violet / Emerald / Zinc dark palette.
+ * Replaces old terracotta / olive / organic cream with semantic design tokens.
  */
+import { brand, semantic } from './theme';
 
 export interface M3ColorScheme {
   // Brand & Accent roles
@@ -11,6 +11,12 @@ export interface M3ColorScheme {
   onPrimary: string;
   primaryContainer: string;
   onPrimaryContainer: string;
+
+  primaryTonal: string;
+  onPrimaryTonal: string;
+  primaryStrong: string;
+  onPrimaryStrong: string;
+  primarySoft: string;
 
   secondary: string;
   onSecondary: string;
@@ -22,7 +28,12 @@ export interface M3ColorScheme {
   tertiaryContainer: string;
   onTertiaryContainer: string;
 
-  // MeetaNotes Specific Accents
+  success: string;
+  successTonal: string;
+  onSuccessTonal: string;
+  successSoft: string;
+
+  // MeetaNotes Specific Accents (Mapped to new tokens)
   coral: string;
   coralLight: string;
   coralDark: string;
@@ -37,11 +48,18 @@ export interface M3ColorScheme {
   onError: string;
   errorContainer: string;
   onErrorContainer: string;
+  danger: string;
+  dangerSoft: string;
+  dangerLight: string;
+  warning: string;
+  warningSoft: string;
+  warningLight: string;
 
   // Surface Hierarchy
   background: string;
   onBackground: string;
   surface: string;
+  surfaceRaised: string;
   onSurface: string;
   surfaceVariant: string;
   onSurfaceVariant: string;
@@ -55,10 +73,14 @@ export interface M3ColorScheme {
   // Outlines & Dividers
   outline: string;
   outlineVariant: string;
+  border: string;
+  borderStrong: string;
 
-  // Mappings for component styles
+  // Semantic Mappings
   text: string;
   textSecondary: string;
+  textSoft: string;
+  textFaint: string;
   textMuted: string;
   card: string;
   cardBorder: string;
@@ -66,166 +88,108 @@ export interface M3ColorScheme {
   tint: string;
   tabIconDefault: string;
   tabIconSelected: string;
-  border: string;
   primaryText: string;
   accent: string;
   accentLight: string;
   accentBorder: string;
-  danger: string;
-  dangerLight: string;
-  warning: string;
-  warningLight: string;
+  inverted: string;
+  onInverted: string;
 }
 
-const lightTheme: M3ColorScheme = {
-  // Primary (MeetaNotes Terracotta Coral)
-  primary: '#E06D53',
-  onPrimary: '#FFFFFF',
-  primaryContainer: '#FDF4F2',
-  onPrimaryContainer: '#C8533A',
+const themeTokens: M3ColorScheme = {
+  // Primary (Tailwind Violet 400 base)
+  primary: semantic.primary,
+  onPrimary: semantic.onPrimaryTonal,
+  primaryContainer: semantic.primarySoft,
+  onPrimaryContainer: semantic.primaryTonal,
 
-  // Secondary (Forest Moss Olive Green)
-  secondary: '#4D5C3B',
-  onSecondary: '#FFFFFF',
-  secondaryContainer: '#EBF0E6',
-  onSecondaryContainer: '#2D3723',
+  primaryTonal: semantic.primaryTonal,
+  onPrimaryTonal: semantic.onPrimaryTonal,
+  primaryStrong: semantic.primaryStrong,
+  onPrimaryStrong: semantic.onPrimaryStrong,
+  primarySoft: semantic.primarySoft,
 
-  // Tertiary (Warm Amber Accent)
-  tertiary: '#F5C242',
-  onTertiary: '#3D2E00',
-  tertiaryContainer: '#FEF3D6',
-  onTertiaryContainer: '#5C4500',
+  // Secondary (Zinc 500 base)
+  secondary: brand.zinc[500],
+  onSecondary: brand.zinc[50],
+  secondaryContainer: semantic.surfaceRaised,
+  onSecondaryContainer: semantic.textSoft,
 
-  // Dedicated MeetaNotes Accents
-  coral: '#E06D53',
-  coralLight: '#FDF4F2',
-  coralDark: '#C8533A',
-  olive: '#4D5C3B',
-  oliveLight: '#EBF0E6',
-  oliveDark: '#3A472C',
-  oliveText: '#F4F6F1',
-  amber: '#F5C242',
+  // Tertiary (Emerald 400 base)
+  tertiary: semantic.success,
+  onTertiary: semantic.onSuccessTonal,
+  tertiaryContainer: semantic.successSoft,
+  onTertiaryContainer: semantic.successTonal,
 
-  // Error (Clean Crimson)
-  error: '#E53935',
-  onError: '#FFFFFF',
-  errorContainer: '#FFEBEE',
-  onErrorContainer: '#5C0A0A',
+  success: semantic.success,
+  successTonal: semantic.successTonal,
+  onSuccessTonal: semantic.onSuccessTonal,
+  successSoft: semantic.successSoft,
 
-  // Surface Tonal Hierarchy (Warm Cream & Organic White)
-  background: '#FBF9F7',
-  onBackground: '#191A1D',
-  surface: '#FFFFFF',
-  onSurface: '#191A1D',
-  surfaceVariant: '#F3EFEA',
-  onSurfaceVariant: '#686B73',
+  // Accents mapped to new palette
+  coral: semantic.primary,
+  coralLight: semantic.primarySoft,
+  coralDark: semantic.primaryStrong,
+  olive: semantic.success,
+  oliveLight: semantic.successSoft,
+  oliveDark: brand.tertiary[800],
+  oliveText: semantic.onSuccessTonal,
+  amber: semantic.warning,
 
-  surfaceContainerLowest: '#FFFFFF',
-  surfaceContainerLow: '#FFFFFF',
-  surfaceContainer: '#F7F5F2',
-  surfaceContainerHigh: '#EDE9E3',
-  surfaceContainerHighest: '#E4DFD7',
+  // Feedback
+  error: semantic.danger,
+  onError: semantic.onInverted,
+  errorContainer: semantic.dangerSoft,
+  onErrorContainer: semantic.danger,
+  danger: semantic.danger,
+  dangerSoft: semantic.dangerSoft,
+  dangerLight: semantic.dangerSoft,
+  warning: semantic.warning,
+  warningSoft: semantic.warningSoft,
+  warningLight: semantic.warningSoft,
+
+  // Surfaces
+  background: semantic.bg,
+  onBackground: semantic.text,
+  surface: semantic.surface,
+  surfaceRaised: semantic.surfaceRaised,
+  onSurface: semantic.text,
+  surfaceVariant: semantic.surfaceRaised,
+  onSurfaceVariant: semantic.textSoft,
+
+  surfaceContainerLowest: semantic.bg,
+  surfaceContainerLow: semantic.surface,
+  surfaceContainer: semantic.surfaceRaised,
+  surfaceContainerHigh: semantic.border,
+  surfaceContainerHighest: semantic.borderStrong,
 
   // Outlines & Borders
-  outline: '#D0CBC4',
-  outlineVariant: 'rgba(0, 0, 0, 0.06)',
+  outline: semantic.border,
+  outlineVariant: semantic.borderStrong,
+  border: semantic.border,
+  borderStrong: semantic.borderStrong,
 
-  // Semantic Mappings
-  text: '#191A1D',
-  textSecondary: '#686B73',
-  textMuted: '#9EA2AA',
-  card: '#FFFFFF',
-  cardBorder: 'rgba(0, 0, 0, 0.06)',
-  cardHover: '#F8F5F1',
-  tint: '#E06D53',
-  tabIconDefault: '#9EA2AA',
-  tabIconSelected: '#E06D53',
-  border: 'rgba(0, 0, 0, 0.06)',
-  primaryText: '#FFFFFF',
-  accent: '#4D5C3B',
-  accentLight: '#EBF0E6',
-  accentBorder: '#C4D3BB',
-  danger: '#E53935',
-  dangerLight: '#FFEBEE',
-  warning: '#F59E0B',
-  warningLight: '#FEF3C7',
-};
-
-const darkTheme: M3ColorScheme = {
-  // Primary (Warm Coral Night)
-  primary: '#E2725B',
-  onPrimary: '#2C0E07',
-  primaryContainer: '#5C2518',
-  onPrimaryContainer: '#FADCD5',
-
-  // Secondary (Muted Forest Olive)
-  secondary: '#7D9465',
-  onSecondary: '#18230F',
-  secondaryContainer: '#2D3820',
-  onSecondaryContainer: '#D9E5CC',
-
-  // Tertiary (Warm Amber Night)
-  tertiary: '#F5C242',
-  onTertiary: '#3D2E00',
-  tertiaryContainer: '#4D3900',
-  onTertiaryContainer: '#FEF3D6',
-
-  // Dedicated MeetaNotes Accents
-  coral: '#E2725B',
-  coralLight: '#3D1B14',
-  coralDark: '#C8533A',
-  olive: '#556844',
-  oliveLight: '#28331E',
-  oliveDark: '#1E2716',
-  oliveText: '#F4F6F1',
-  amber: '#F5C242',
-
-  // Error
-  error: '#EF5350',
-  onError: '#3E0808',
-  errorContainer: '#5C1414',
-  onErrorContainer: '#FFCDD2',
-
-  // Surface Tonal Hierarchy (Rich Obsidian & Sleek Charcoal)
-  background: '#121316',
-  onBackground: '#F4F5F7',
-  surface: '#1C1E22',
-  onSurface: '#F4F5F7',
-  surfaceVariant: '#24272D',
-  onSurfaceVariant: '#9DA1AA',
-
-  surfaceContainerLowest: '#0D0E10',
-  surfaceContainerLow: '#16171B',
-  surfaceContainer: '#1C1E22',
-  surfaceContainerHigh: '#24272D',
-  surfaceContainerHighest: '#2D3038',
-
-  // Outlines
-  outline: '#484C55',
-  outlineVariant: 'rgba(255, 255, 255, 0.08)',
-
-  // Semantic Mappings
-  text: '#F4F5F7',
-  textSecondary: '#9DA1AA',
-  textMuted: '#6E727C',
-  card: '#1C1E22',
-  cardBorder: 'rgba(255, 255, 255, 0.08)',
-  cardHover: '#24272D',
-  tint: '#E2725B',
-  tabIconDefault: '#6E727C',
-  tabIconSelected: '#E2725B',
-  border: 'rgba(255, 255, 255, 0.08)',
-  primaryText: '#FFFFFF',
-  accent: '#7D9465',
-  accentLight: '#2D3820',
-  accentBorder: '#4B5C37',
-  danger: '#EF5350',
-  dangerLight: '#3E1818',
-  warning: '#FBBF24',
-  warningLight: '#422006',
+  // Mappings
+  text: semantic.text,
+  textSecondary: semantic.textSoft,
+  textSoft: semantic.textSoft,
+  textFaint: semantic.textFaint,
+  textMuted: semantic.textFaint,
+  card: semantic.surface,
+  cardBorder: semantic.border,
+  cardHover: semantic.surfaceRaised,
+  tint: semantic.primary,
+  tabIconDefault: semantic.textFaint,
+  tabIconSelected: semantic.primary,
+  primaryText: semantic.onPrimaryStrong,
+  accent: semantic.primary,
+  accentLight: semantic.primarySoft,
+  accentBorder: semantic.borderStrong,
+  inverted: semantic.inverted,
+  onInverted: semantic.onInverted,
 };
 
 export default {
-  light: lightTheme,
-  dark: darkTheme,
+  light: themeTokens,
+  dark: themeTokens,
 };
