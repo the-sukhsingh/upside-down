@@ -108,6 +108,7 @@ export const fontNames = {
   medium: 'Geist-Medium',
   semiBold: 'Geist-SemiBold',
   bold: 'Geist-Bold',
+  mono: 'GeistMono-Regular',
   monoRegular: 'GeistMono-Regular',
   monoMedium: 'GeistMono-Medium',
   monoSemiBold: 'GeistMono-SemiBold',

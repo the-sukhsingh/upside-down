@@ -94,6 +94,7 @@ export interface M3ColorScheme {
   accentBorder: string;
   inverted: string;
   onInverted: string;
+  shadow: string;
 }
 
 const themeTokens: M3ColorScheme = {
@@ -187,6 +188,7 @@ const themeTokens: M3ColorScheme = {
   accentBorder: semantic.borderStrong,
   inverted: semantic.inverted,
   onInverted: semantic.onInverted,
+  shadow: semantic.bg,
 };
 
 export default {
