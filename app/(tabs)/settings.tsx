@@ -117,8 +117,8 @@ export default function SettingsScreen() {
               ]}>
               <View style={styles.engineTopRow}>
                 <View style={styles.engineBadgeRow}>
-                  <View style={[styles.engineIconCircle, { backgroundColor: '#F55036' }]}>
-                    <Ionicons name="flash" size={14} color="#FFFFFF" />
+                  <View style={[styles.engineIconCircle, { backgroundColor: colors.primaryTonal }]}>
+                    <Ionicons name="flash" size={14} color={colors.onPrimaryTonal} />
                   </View>
                   <Text style={[styles.engineName, { color: colors.text }]}>
                     Groq Turbo Engine (Recommended)
@@ -164,8 +164,8 @@ export default function SettingsScreen() {
               ]}>
               <View style={styles.engineTopRow}>
                 <View style={styles.engineBadgeRow}>
-                  <View style={[styles.engineIconCircle, { backgroundColor: '#10B981' }]}>
-                    <Ionicons name="globe" size={14} color="#FFFFFF" />
+                  <View style={[styles.engineIconCircle, { backgroundColor: colors.secondaryContainer }]}>
+                    <Ionicons name="globe" size={14} color={colors.onSecondaryContainer} />
                   </View>
                   <Text style={[styles.engineName, { color: colors.text }]}>
                     Sarvam AI Multilingual Engine
@@ -336,7 +336,7 @@ export default function SettingsScreen() {
                 <View
                   style={[
                     styles.statusDot,
-                    { backgroundColor: isGroqConfigured ? '#10B981' : '#F59E0B' },
+                    { backgroundColor: isGroqConfigured ? colors.secondary : colors.warning },
                   ]}
                 />
                 <Text style={[styles.credentialName, { color: colors.text }]}>Groq API Key</Text>
@@ -351,7 +351,7 @@ export default function SettingsScreen() {
                 <View
                   style={[
                     styles.statusDot,
-                    { backgroundColor: isSarvamConfigured ? '#10B981' : '#F59E0B' },
+                    { backgroundColor: isSarvamConfigured ? colors.secondary : colors.warning },
                   ]}
                 />
                 <Text style={[styles.credentialName, { color: colors.text }]}>Sarvam AI Key</Text>
@@ -414,10 +414,12 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
     gap: 12,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   cardHeaderRow: {
     flexDirection: 'row',
@@ -567,16 +569,16 @@ const styles = StyleSheet.create({
   },
   dataBtn: {
     flex: 1,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 10,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   dataBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });

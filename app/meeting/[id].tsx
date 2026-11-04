@@ -42,8 +42,8 @@ export default function MeetingDetailScreen() {
         <Text style={[styles.notFoundText, { color: colors.text }]}>Meeting not found</Text>
         <TouchableOpacity
           onPress={() => router.back()}
-          style={[styles.backBtn, { backgroundColor: colors.primary }]}>
-          <Text style={[styles.backBtnText, { color: colors.primaryText }]}>Go Back</Text>
+          style={[styles.backBtn, { backgroundColor: colors.primaryTonal }]}>
+          <Text style={[styles.backBtnText, { color: colors.onPrimaryTonal }]}>Go Back</Text>
         </TouchableOpacity>
       </View>
     );
@@ -145,9 +145,9 @@ export default function MeetingDetailScreen() {
           {/* Record CTA */}
           <TouchableOpacity
             onPress={handleStartRecord}
-            style={[styles.recordCta, { backgroundColor: colors.primary }]}>
-            <Ionicons name="mic" size={18} color={colors.primaryText} />
-            <Text style={[styles.recordCtaText, { color: colors.primaryText }]}>
+            style={[styles.recordCta, { backgroundColor: colors.primaryTonal }]}>
+            <Ionicons name="mic" size={18} color={colors.onPrimaryTonal} />
+            <Text style={[styles.recordCtaText, { color: colors.onPrimaryTonal }]}>
               Start Recording This Meeting
             </Text>
           </TouchableOpacity>
@@ -178,9 +178,9 @@ export default function MeetingDetailScreen() {
             <TouchableOpacity
               onPress={handleGenerateBriefing}
               disabled={isGeneratingBriefing}
-              style={[styles.generateBriefingBtn, { backgroundColor: colors.primaryContainer, borderColor: colors.primary }]}>
-              <Ionicons name="sparkles-outline" size={16} color={colors.primary} />
-              <Text style={[styles.generateBriefingBtnText, { color: colors.primary }]}>
+              style={[styles.generateBriefingBtn, { backgroundColor: colors.primaryTonal }]}>
+              <Ionicons name="sparkles-outline" size={16} color={colors.onPrimaryTonal} />
+              <Text style={[styles.generateBriefingBtnText, { color: colors.onPrimaryTonal }]}>
                 {isGeneratingBriefing ? 'Compiling Intelligence...' : 'Generate Pre-Meeting Briefing'}
               </Text>
             </TouchableOpacity>
@@ -260,14 +260,16 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     gap: 12,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   title: {
     fontSize: 20,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: -0.3,
   },
   metaRow: {
@@ -287,13 +289,14 @@ const styles = StyleSheet.create({
   },
   agendaBox: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 14,
     gap: 4,
   },
   agendaHeading: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   agendaText: {
     fontSize: 13,
@@ -305,7 +308,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   attendeesRow: {
     flexDirection: 'row',
@@ -317,32 +320,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 28,
+    borderRadius: 999,
   },
   attendeeName: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   recordCta: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 14,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 10,
     marginTop: 4,
   },
   recordCtaText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   briefingPromptCard: {
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 20,
+    borderWidth: 1,
     padding: 16,
     gap: 12,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   briefingPromptHeader: {
     flexDirection: 'row',
@@ -363,7 +368,7 @@ const styles = StyleSheet.create({
   },
   briefingPromptTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   briefingPromptSub: {
     fontSize: 12,
@@ -375,13 +380,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    paddingVertical: 11,
+    height: 44,
     borderRadius: 10,
     borderWidth: 1,
   },
   generateBriefingBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   emptyHint: {
     fontSize: 13,
@@ -389,7 +394,7 @@ const styles = StyleSheet.create({
   },
   linkedNoteItem: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
     gap: 4,
   },
@@ -416,8 +421,10 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   backBtnText: {
     fontSize: 14,

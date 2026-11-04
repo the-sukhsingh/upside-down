@@ -80,9 +80,9 @@ export default function MeetingsScreen() {
 
         <TouchableOpacity
           onPress={() => setAddModalOpen(true)}
-          style={[styles.addBtn, { backgroundColor: colors.primary }]}>
-          <Ionicons name="add" size={18} color={colors.primaryText} />
-          <Text style={[styles.addBtnText, { color: colors.primaryText }]}>New Meeting</Text>
+          style={[styles.addBtn, { backgroundColor: colors.primaryTonal }]}>
+          <Ionicons name="add" size={18} color={colors.onPrimaryTonal} />
+          <Text style={[styles.addBtnText, { color: colors.onPrimaryTonal }]}>New Meeting</Text>
         </TouchableOpacity>
       </View>
 
@@ -98,8 +98,8 @@ export default function MeetingsScreen() {
             </Text>
             <TouchableOpacity
               onPress={() => setAddModalOpen(true)}
-              style={[styles.emptyBtn, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.emptyBtnText, { color: colors.primaryText }]}>Add Meeting</Text>
+              style={[styles.emptyBtn, { backgroundColor: colors.primaryTonal }]}>
+              <Text style={[styles.emptyBtnText, { color: colors.onPrimaryTonal }]}>Add Meeting</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -193,8 +193,8 @@ export default function MeetingsScreen() {
 
             <TouchableOpacity
               onPress={handleCreateMeeting}
-              style={[styles.createMeetingBtn, { backgroundColor: colors.primary }]}>
-              <Text style={[styles.createMeetingBtnText, { color: colors.primaryText }]}>
+              style={[styles.createMeetingBtn, { backgroundColor: colors.primaryTonal }]}>
+              <Text style={[styles.createMeetingBtnText, { color: colors.onPrimaryTonal }]}>
                 Create Meeting
               </Text>
             </TouchableOpacity>
@@ -234,12 +234,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    height: 36,
+    borderRadius: 10,
   },
   addBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   scrollContent: {
     padding: 16,
@@ -258,7 +258,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 6,
   },
   emptySub: {
@@ -269,21 +269,24 @@ const styles = StyleSheet.create({
   },
   emptyBtn: {
     paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
+    height: 44,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(11, 11, 15, 0.6)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderWidth: 1,
     padding: 20,
     gap: 14,
   },
@@ -296,7 +299,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   inputGroup: {
     gap: 6,
@@ -308,25 +311,26 @@ const styles = StyleSheet.create({
   },
   textInput: {
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    height: 44,
     borderRadius: 10,
     borderWidth: 1,
     fontSize: 14,
   },
   textArea: {
     minHeight: 60,
+    height: 'auto',
     textAlignVertical: 'top',
   },
   createMeetingBtn: {
     height: 44,
-    borderRadius: 22,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 8,
   },
   createMeetingBtnText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });
 
