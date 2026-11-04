@@ -131,14 +131,14 @@ export function AutoFollowUpModal({
                   style={[
                     styles.toneChip,
                     {
-                      backgroundColor: isSelected ? colors.primaryContainer : colors.surfaceContainerLow,
-                      borderColor: isSelected ? colors.primary : colors.cardBorder,
+                      backgroundColor: isSelected ? colors.primaryTonal : colors.surfaceContainer,
+                      borderColor: isSelected ? colors.primary : colors.border,
                     },
                   ]}>
                   <Text
                     style={[
                       styles.toneChipText,
-                      { color: isSelected ? colors.primary : colors.text },
+                      { color: isSelected ? colors.onPrimaryTonal : colors.text },
                     ]}>
                     {t.label}
                   </Text>
@@ -149,7 +149,7 @@ export function AutoFollowUpModal({
 
           {/* Email Subject Field (if not whatsapp) */}
           {activeTone !== 'whatsapp' ? (
-            <View style={[styles.fieldBox, { backgroundColor: colors.surfaceContainerLow, borderColor: colors.cardBorder }]}>
+            <View style={[styles.fieldBox, { backgroundColor: colors.surfaceContainer, borderColor: colors.border }]}>
               <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>Subject:</Text>
               <TextInput
                 value={editedSubject}
@@ -171,8 +171,8 @@ export function AutoFollowUpModal({
                 styles.bodyInput,
                 {
                   color: colors.text,
-                  backgroundColor: colors.surfaceContainerLow,
-                  borderColor: colors.cardBorder,
+                  backgroundColor: colors.surfaceContainer,
+                  borderColor: colors.border,
                 },
               ]}
               placeholder={isGenerating ? 'Generating follow-up with AI...' : 'Message body...'}
@@ -185,7 +185,7 @@ export function AutoFollowUpModal({
             {/* Copy Button */}
             <TouchableOpacity
               onPress={handleCopy}
-              style={[styles.actionBtn, { backgroundColor: colors.surfaceContainer, borderColor: colors.cardBorder }]}>
+              style={[styles.actionBtn, { backgroundColor: colors.surfaceContainer, borderColor: colors.border }]}>
               <Ionicons name="copy-outline" size={16} color={colors.text} />
               <Text style={[styles.actionBtnText, { color: colors.text }]}>Copy</Text>
             </TouchableOpacity>
@@ -193,17 +193,17 @@ export function AutoFollowUpModal({
             {/* WhatsApp Send Button */}
             <TouchableOpacity
               onPress={handleOpenWhatsApp}
-              style={[styles.actionBtn, { backgroundColor: '#25D366' }]}>
-              <Ionicons name="logo-whatsapp" size={16} color="#FFFFFF" />
-              <Text style={[styles.actionBtnText, { color: '#FFFFFF' }]}>WhatsApp</Text>
+              style={[styles.actionBtn, { backgroundColor: colors.secondaryContainer, borderColor: colors.secondary }]}>
+              <Ionicons name="logo-whatsapp" size={16} color={colors.onSecondaryContainer} />
+              <Text style={[styles.actionBtnText, { color: colors.onSecondaryContainer }]}>WhatsApp</Text>
             </TouchableOpacity>
 
             {/* Email Send Button */}
             <TouchableOpacity
               onPress={handleOpenEmail}
-              style={[styles.actionBtn, { backgroundColor: colors.primary }]}>
-              <Ionicons name="mail" size={16} color={colors.primaryText} />
-              <Text style={[styles.actionBtnText, { color: colors.primaryText }]}>Send Email</Text>
+              style={[styles.actionBtn, { backgroundColor: colors.primaryTonal, borderColor: colors.primary }]}>
+              <Ionicons name="mail" size={16} color={colors.onPrimaryTonal} />
+              <Text style={[styles.actionBtnText, { color: colors.onPrimaryTonal }]}>Send Email</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -215,7 +215,7 @@ export function AutoFollowUpModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(11, 11, 15, 0.6)',
     justifyContent: 'flex-end',
   },
   modalCard: {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   modalSubtitle: {
     fontSize: 11,
@@ -269,32 +269,34 @@ const styles = StyleSheet.create({
   },
   toneChip: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 999,
     borderWidth: 1,
   },
   toneChipText: {
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   fieldBox: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 8,
+    height: 44,
     borderRadius: 10,
     borderWidth: 1,
     gap: 8,
   },
   fieldLabel: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   subjectInput: {
     flex: 1,
     fontSize: 13,
     padding: 0,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   editorScroll: {
     maxHeight: 280,
@@ -302,7 +304,7 @@ const styles = StyleSheet.create({
   },
   bodyInput: {
     minHeight: 180,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     padding: 14,
     fontSize: 13,
@@ -320,17 +322,17 @@ const styles = StyleSheet.create({
   },
   actionBtn: {
     flex: 1,
+    height: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
   },
   actionBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });
 

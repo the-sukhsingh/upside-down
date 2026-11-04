@@ -122,39 +122,40 @@ export function NotePeekModal({
             {contextMatch.openCommitments.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionTitleRow}>
-                  <Ionicons name="shield-checkmark" size={16} color="#E06D53" />
+                  <Ionicons name="shield-checkmark" size={16} color={colors.primary} />
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>
                     Pending Commitments ({contextMatch.openCommitments.length})
                   </Text>
                 </View>
-                {contextMatch.openCommitments.map((com) => (
-                  <View
-                    key={com.id}
-                    style={[
-                      styles.commitmentItem,
-                      {
-                        backgroundColor:
-                          com.direction === 'they_owe_me'
-                            ? colors.surfaceContainerLow
-                            : colors.surfaceContainer,
-                        borderColor: '#E06D53',
-                      },
-                    ]}>
-                    <View style={styles.commitmentHeaderRow}>
-                      <Text style={[styles.commitmentDirection, { color: '#E06D53' }]}>
-                        {com.direction === 'they_owe_me' ? 'THEY OWE ME' : 'I OWE'}
-                      </Text>
-                      {com.dueDate && (
-                        <Text style={[styles.commitmentDue, { color: colors.textSecondary }]}>
-                          Due: {com.dueDate}
+                {contextMatch.openCommitments.map((com) => {
+                  const isTheyOwe = com.direction === 'they_owe_me';
+                  const dirColor = isTheyOwe ? colors.secondary : colors.primary;
+                  return (
+                    <View
+                      key={com.id}
+                      style={[
+                        styles.commitmentItem,
+                        {
+                          backgroundColor: colors.surfaceContainer,
+                          borderColor: colors.border,
+                        },
+                      ]}>
+                      <View style={styles.commitmentHeaderRow}>
+                        <Text style={[styles.commitmentDirection, { color: dirColor }]}>
+                          {isTheyOwe ? 'THEY OWE ME' : 'I OWE'}
                         </Text>
-                      )}
+                        {com.dueDate && (
+                          <Text style={[styles.commitmentDue, { color: colors.textSecondary }]}>
+                            Due: {com.dueDate}
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={[styles.commitmentPromise, { color: colors.text }]}>
+                        {com.speaker ? `${com.speaker}: ` : ''}"{com.promise}"
+                      </Text>
                     </View>
-                    <Text style={[styles.commitmentPromise, { color: colors.text }]}>
-                      {com.speaker ? `${com.speaker}: ` : ''}"{com.promise}"
-                    </Text>
-                  </View>
-                ))}
+                  );
+                })}
               </View>
             )}
 
@@ -221,17 +222,17 @@ export function NotePeekModal({
                 onPin?.(contextMatch);
                 onClose();
               }}
-              style={[styles.pinBtn, { backgroundColor: colors.primary }]}>
-              <Ionicons name="pin" size={16} color={colors.primaryText} />
-              <Text style={[styles.pinBtnText, { color: colors.primaryText }]}>
+              style={[styles.pinBtn, { backgroundColor: colors.primaryTonal }]}>
+              <Ionicons name="pin" size={16} color={colors.onPrimaryTonal} />
+              <Text style={[styles.pinBtnText, { color: colors.onPrimaryTonal }]}>
                 Pin Context to Current Meeting
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
               onPress={onClose}
-              style={[styles.closeBtn, { borderColor: colors.border }]}>
-              <Text style={[styles.closeBtnText, { color: colors.text }]}>Close Peek</Text>
+              style={[styles.closeBtn, { backgroundColor: colors.surfaceContainer, borderColor: colors.border }]}>
+              <Text style={[styles.closeBtnText, { color: colors.textSecondary }]}>Close Peek</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -243,7 +244,7 @@ export function NotePeekModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+    backgroundColor: 'rgba(11, 11, 15, 0.6)',
     justifyContent: 'flex-end',
   },
   backdrop: {
@@ -290,7 +291,7 @@ const styles = StyleSheet.create({
   },
   sheetTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   sheetSubtitle: {
     fontSize: 12,
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
   aiBriefCard: {
     padding: 14,
     borderRadius: 14,
-    borderWidth: 1.5,
+    borderWidth: 1,
     gap: 6,
   },
   aiBriefHeader: {
@@ -316,12 +317,12 @@ const styles = StyleSheet.create({
   },
   aiBriefLabel: {
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: 0.8,
   },
   aiBriefText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     lineHeight: 18,
   },
   section: {
@@ -336,7 +337,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.3,
   },
   decisionItem: {
@@ -362,7 +363,7 @@ const styles = StyleSheet.create({
   },
   commitmentDirection: {
     fontSize: 10,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: 0.8,
   },
   commitmentDue: {
@@ -370,7 +371,7 @@ const styles = StyleSheet.create({
   },
   commitmentPromise: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
     lineHeight: 18,
   },
   actionItemRow: {
@@ -387,7 +388,7 @@ const styles = StyleSheet.create({
   },
   summaryBox: {
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   summaryText: {
@@ -406,7 +407,7 @@ const styles = StyleSheet.create({
   pinBtn: {
     flex: 1,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -414,18 +415,18 @@ const styles = StyleSheet.create({
   },
   pinBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   closeBtn: {
     paddingHorizontal: 16,
     height: 44,
-    borderRadius: 22,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
   closeBtnText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '500',
   },
 });

@@ -127,12 +127,12 @@ export function IdeaCollisionModal({
               style={[
                 styles.tabBtn,
                 activeTab === 'all' && {
-                  backgroundColor: colors.primaryContainer,
+                  backgroundColor: colors.primaryTonal,
                   borderColor: colors.primary,
                 },
                 activeTab !== 'all' && {
                   backgroundColor: colors.surfaceContainer,
-                  borderColor: 'transparent',
+                  borderColor: colors.border,
                 },
               ]}>
               <Text
@@ -140,7 +140,7 @@ export function IdeaCollisionModal({
                   styles.tabText,
                   {
                     color:
-                      activeTab === 'all' ? colors.primary : colors.textSecondary,
+                      activeTab === 'all' ? colors.onPrimaryTonal : colors.textSecondary,
                   },
                 ]}>
                 All Ideas ({ideaCollisions.length})
@@ -152,19 +152,19 @@ export function IdeaCollisionModal({
               style={[
                 styles.tabBtn,
                 activeTab === 'saved' && {
-                  backgroundColor: colors.primaryContainer,
+                  backgroundColor: colors.primaryTonal,
                   borderColor: colors.primary,
                 },
                 activeTab !== 'saved' && {
                   backgroundColor: colors.surfaceContainer,
-                  borderColor: 'transparent',
+                  borderColor: colors.border,
                 },
               ]}>
               <Ionicons
                 name="bookmark"
                 size={12}
                 color={
-                  activeTab === 'saved' ? colors.primary : colors.textSecondary
+                  activeTab === 'saved' ? colors.onPrimaryTonal : colors.textSecondary
                 }
               />
               <Text
@@ -172,7 +172,7 @@ export function IdeaCollisionModal({
                   styles.tabText,
                   {
                     color:
-                      activeTab === 'saved' ? colors.primary : colors.textSecondary,
+                      activeTab === 'saved' ? colors.onPrimaryTonal : colors.textSecondary,
                   },
                 ]}>
                 Saved ({savedCount})
@@ -184,18 +184,18 @@ export function IdeaCollisionModal({
               style={[
                 styles.tabBtn,
                 activeTab === 'experimenting' && {
-                  backgroundColor: 'rgba(16, 185, 129, 0.15)',
-                  borderColor: '#10B981',
+                  backgroundColor: colors.secondaryContainer,
+                  borderColor: colors.secondary,
                 },
                 activeTab !== 'experimenting' && {
                   backgroundColor: colors.surfaceContainer,
-                  borderColor: 'transparent',
+                  borderColor: colors.border,
                 },
               ]}>
               <Ionicons
                 name="flask"
                 size={12}
-                color={activeTab === 'experimenting' ? '#059669' : colors.textSecondary}
+                color={activeTab === 'experimenting' ? colors.onSecondaryContainer : colors.textSecondary}
               />
               <Text
                 style={[
@@ -203,7 +203,7 @@ export function IdeaCollisionModal({
                   {
                     color:
                       activeTab === 'experimenting'
-                        ? '#059669'
+                        ? colors.onSecondaryContainer
                         : colors.textSecondary,
                   },
                 ]}>
@@ -219,16 +219,16 @@ export function IdeaCollisionModal({
             style={[
               styles.collideCtaBtn,
               {
-                backgroundColor: colors.primary,
+                backgroundColor: colors.primaryTonal,
                 opacity: isGenerating || isCollidingIdeas ? 0.7 : 1,
               },
             ]}>
             {isGenerating || isCollidingIdeas ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color={colors.onPrimaryTonal} />
             ) : (
-              <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+              <Ionicons name="sparkles" size={14} color={colors.onPrimaryTonal} />
             )}
-            <Text style={styles.collideCtaText}>
+            <Text style={[styles.collideCtaText, { color: colors.onPrimaryTonal }]}>
               {isGenerating || isCollidingIdeas ? 'Colliding...' : 'Collide Ideas'}
             </Text>
           </TouchableOpacity>
@@ -243,11 +243,11 @@ export function IdeaCollisionModal({
               <View
                 style={[
                   styles.emptyIconCircle,
-                  { backgroundColor: colors.surfaceContainer },
+                  { backgroundColor: colors.surfaceContainerHighest },
                 ]}>
                 <Ionicons
                   name="git-compare-outline"
-                  size={36}
+                  size={24}
                   color={colors.textMuted}
                 />
               </View>
@@ -270,10 +270,10 @@ export function IdeaCollisionModal({
                 disabled={isGenerating || isCollidingIdeas}
                 style={[
                   styles.emptyActionBtn,
-                  { backgroundColor: colors.primary },
+                  { backgroundColor: colors.primaryTonal },
                 ]}>
-                <Ionicons name="flash" size={16} color="#FFFFFF" />
-                <Text style={styles.emptyActionText}>
+                <Ionicons name="flash" size={16} color={colors.onPrimaryTonal} />
+                <Text style={[styles.emptyActionText, { color: colors.onPrimaryTonal }]}>
                   Synthesize Connections Now
                 </Text>
               </TouchableOpacity>
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     gap: 5,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: 999,
     borderWidth: 1,
   },
   tabText: {
@@ -378,13 +378,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
+    height: 36,
+    borderRadius: 10,
   },
   collideCtaText: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   listContent: {
     padding: 16,
@@ -398,16 +397,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   emptyIconCircle: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 8,
     textAlign: 'center',
   },
@@ -422,13 +421,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 24,
+    height: 44,
+    borderRadius: 10,
   },
   emptyActionText: {
     fontSize: 13,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });
 
