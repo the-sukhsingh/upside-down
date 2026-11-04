@@ -4,6 +4,7 @@ import { Text, View } from './Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { Meeting } from '@/types/meeting';
 import Colors from '@/constants/Colors';
+import { semantic } from '@/constants/theme';
 import { useColorScheme } from './useColorScheme';
 
 interface MeetingCardProps {
@@ -14,7 +15,7 @@ interface MeetingCardProps {
   isCurrentlyRecording?: boolean;
 }
 
-const AVATAR_COLORS = ['#A78BFA', '#34D399', '#71717A', '#C4B5FD', '#FBBF24'];
+const AVATAR_COLORS = [semantic.primary, semantic.success, semantic.textFaint, semantic.primaryTonal, semantic.warning];
 
 function getInitials(name: string): string {
   if (!name) return 'U';
@@ -267,7 +268,7 @@ const styles = StyleSheet.create({
   avatarInitials: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#18181B',
+    color: semantic.onInverted,
   },
   extraAttendeesBadge: {
     width: 26,

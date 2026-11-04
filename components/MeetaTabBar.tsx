@@ -380,7 +380,7 @@ export function MeetaTabBar({
           {
             backgroundColor: colors.surface,
             borderColor: colors.border,
-            shadowColor: '#000000',
+            shadowColor: colors.shadow,
           },
         ]}>
         {/* Animated Sliding Active Background Indicator Pill */}

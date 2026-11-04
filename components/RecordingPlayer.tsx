@@ -4,6 +4,7 @@ import { Text, View } from './Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import Colors from '@/constants/Colors';
+import { brand } from '@/constants/theme';
 import { useColorScheme } from './useColorScheme';
 
 export interface SeekTarget {
@@ -135,7 +136,7 @@ export function RecordingPlayer({
             <Text style={[styles.timeText, { color: colors.textSoft }]}>{formatSecs(totalDuration)}</Text>
           </View>
 
-          <View style={[styles.progressBarBg, { backgroundColor: '#27272A' }]}>
+          <View style={[styles.progressBarBg, { backgroundColor: brand.zinc[800] }]}>
             <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.primaryTonal }]} />
           </View>
         </View>
