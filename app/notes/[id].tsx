@@ -23,6 +23,7 @@ import { ToastNotification, ToastConfig } from '@/components/ToastNotification';
 import { calendarTaskService } from '@/services/calendarTaskService';
 import { ActionItem } from '@/types/meeting';
 import Colors from '@/constants/Colors';
+import { fontNames } from '@/constants/theme';
 import { useColorScheme } from '@/components/useColorScheme';
 
 export default function NoteDetailScreen() {
@@ -425,10 +426,10 @@ export default function NoteDetailScreen() {
               <TouchableOpacity
                 onPress={handleSynthesizeNoteCollisions}
                 disabled={isSynthesizing || isCollidingIdeas}
-                style={[styles.collideNowBtn, { backgroundColor: colors.primary }]}
+                style={[styles.collideNowBtn, { backgroundColor: colors.primaryTonal }]}
               >
-                <Ionicons name="flash" size={14} color="#FFF" />
-                <Text style={styles.collideNowBtnText}>
+                <Ionicons name="flash" size={14} color={colors.onPrimaryTonal} />
+                <Text style={[styles.collideNowBtnText, { color: colors.onPrimaryTonal }]}>
                   {isSynthesizing || isCollidingIdeas ? 'Synthesizing...' : 'Collide With Other Notes'}
                 </Text>
               </TouchableOpacity>
@@ -691,9 +692,33 @@ export default function NoteDetailScreen() {
 
             {showFullTranscript && (
               <View style={[styles.transcriptContainer, { backgroundColor: colors.surfaceContainerLow }]}>
-                <Text style={[styles.transcriptText, { color: colors.text }]}>
-                  {recording.transcript}
-                </Text>
+                {recording.transcriptSegments && recording.transcriptSegments.length > 0 ? (
+                  recording.transcriptSegments.map((segment, idx) => {
+                    const speakerColors = [colors.primary, colors.secondary, colors.textSecondary];
+                    const speakerColor = speakerColors[idx % speakerColors.length];
+                    return (
+                      <View key={segment.id || idx} style={styles.transcriptSegmentRow}>
+                        <View style={styles.transcriptSpeakerRow}>
+                          <Text style={[styles.transcriptSpeakerText, { color: speakerColor }]}>
+                            {segment.speaker || `Speaker ${idx + 1}`}
+                          </Text>
+                          {segment.startTime !== undefined && (
+                            <Text style={[styles.transcriptTimeText, { color: colors.textSecondary }]}>
+                              {Math.floor(segment.startTime / 60)}:{(segment.startTime % 60).toString().padStart(2, '0')}
+                            </Text>
+                          )}
+                        </View>
+                        <Text style={[styles.transcriptText, { color: colors.text }]}>
+                          {segment.text}
+                        </Text>
+                      </View>
+                    );
+                  })
+                ) : (
+                  <Text style={[styles.transcriptText, { color: colors.text }]}>
+                    {recording.transcript}
+                  </Text>
+                )}
               </View>
             )}
           </View>
@@ -779,10 +804,12 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     gap: 12,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   meetingTitle: {
     fontSize: 20,
@@ -1007,13 +1034,33 @@ const styles = StyleSheet.create({
   },
   transcriptContainer: {
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 6,
+    gap: 8,
+  },
+  transcriptSegmentRow: {
+    paddingVertical: 6,
+    gap: 4,
+    backgroundColor: 'transparent',
+  },
+  transcriptSpeakerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  transcriptSpeakerText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  transcriptTimeText: {
+    fontSize: 12,
+    fontFamily: fontNames.mono,
   },
   transcriptText: {
     fontSize: 12,
     lineHeight: 18,
-    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontFamily: fontNames.mono,
   },
   collisionsNoteSection: {
     marginBottom: 16,
@@ -1038,7 +1085,7 @@ const styles = StyleSheet.create({
   },
   collisionsNoteTitle: {
     fontSize: 15,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   collisionsNoteSubtitle: {
     fontSize: 11,
@@ -1049,12 +1096,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 14,
+    height: 32,
+    borderRadius: 999,
   },
   noteCollideBtnText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   emptyCollisionsBox: {
     borderRadius: 14,
@@ -1066,7 +1113,7 @@ const styles = StyleSheet.create({
   },
   emptyCollisionsTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 4,
   },
   emptyCollisionsText: {
@@ -1080,13 +1127,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 18,
+    height: 44,
+    borderRadius: 10,
     marginTop: 4,
   },
   collideNowBtnText: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#FFF',
+    fontWeight: '600',
   },
 });

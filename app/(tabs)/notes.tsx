@@ -163,7 +163,7 @@ export default function NotesScreen() {
         </View>
 
         {/* Filter Tabs */}
-        <View style={styles.filterTabsRow}>
+        <View style={[styles.filterTabsRow, { backgroundColor: colors.surfaceContainerHighest }]}>
           {(['all', 'collisions', 'actions', 'audio'] as FilterCategory[]).map((tab) => {
             const isSelected = selectedFilter === tab;
             const label =
@@ -181,18 +181,16 @@ export default function NotesScreen() {
                 style={[
                   styles.filterTab,
                   isSelected && {
-                    backgroundColor: colors.primaryContainer,
-                    borderColor: colors.primary,
+                    backgroundColor: colors.primaryTonal,
                   },
                   !isSelected && {
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
+                    backgroundColor: 'transparent',
                   },
                 ]}>
                 <Text
                   style={[
                     styles.filterTabText,
-                    { color: isSelected ? colors.primary : colors.textSecondary },
+                    { color: isSelected ? colors.onPrimaryTonal : colors.textSecondary },
                   ]}>
                   {label}
                 </Text>
@@ -280,17 +278,17 @@ export default function NotesScreen() {
                 style={[
                   styles.collideActionBtn,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.primaryTonal,
                     opacity: isGeneratingCollisions || isCollidingIdeas ? 0.7 : 1,
                   },
                 ]}
               >
                 {isGeneratingCollisions || isCollidingIdeas ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <ActivityIndicator size="small" color={colors.onPrimaryTonal} />
                 ) : (
-                  <Ionicons name="sparkles" size={14} color="#FFFFFF" />
+                  <Ionicons name="sparkles" size={14} color={colors.onPrimaryTonal} />
                 )}
-                <Text style={styles.collideActionBtnText}>
+                <Text style={[styles.collideActionBtnText, { color: colors.onPrimaryTonal }]}>
                   {isGeneratingCollisions || isCollidingIdeas ? 'Colliding...' : 'Collide'}
                 </Text>
               </TouchableOpacity>
@@ -310,10 +308,10 @@ export default function NotesScreen() {
                 <TouchableOpacity
                   onPress={handleCollideIdeas}
                   disabled={isGeneratingCollisions || isCollidingIdeas}
-                  style={[styles.recordCtaBtn, { backgroundColor: colors.primary }]}
+                  style={[styles.recordCtaBtn, { backgroundColor: colors.primaryTonal }]}
                 >
-                  <Ionicons name="flash" size={16} color={colors.primaryText} />
-                  <Text style={[styles.recordCtaBtnText, { color: colors.primaryText }]}>
+                  <Ionicons name="flash" size={16} color={colors.onPrimaryTonal} />
+                  <Text style={[styles.recordCtaBtnText, { color: colors.onPrimaryTonal }]}>
                     Synthesize Now
                   </Text>
                 </TouchableOpacity>
@@ -340,10 +338,8 @@ export default function NotesScreen() {
                 style={[
                   styles.quickCollisionBanner,
                   {
-                    backgroundColor:
-                      theme === 'dark' ? 'rgba(99, 102, 241, 0.15)' : '#EEF2FF',
-                    borderColor:
-                      theme === 'dark' ? 'rgba(99, 102, 241, 0.35)' : '#C7D2FE',
+                    backgroundColor: colors.primaryContainer,
+                    borderColor: colors.primary,
                   },
                 ]}
               >
@@ -439,19 +435,12 @@ export default function NotesScreen() {
                             : 'checkbox-outline'
                         }
                         size={14}
-                        color={
-                          completedActionCount === actionCount ? '#10B981' : colors.secondary
-                        }
+                        color={colors.secondary}
                       />
                       <Text
                         style={[
                           styles.actionsBadgeText,
-                          {
-                            color:
-                              completedActionCount === actionCount
-                                ? '#10B981'
-                                : colors.secondary,
-                          },
+                          { color: colors.secondary },
                         ]}>
                         {completedActionCount}/{actionCount} tasks
                       </Text>
@@ -503,8 +492,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 9,
-    borderRadius: 12,
+    height: 44,
+    borderRadius: 10,
     borderWidth: 1,
     gap: 8,
   },
@@ -515,14 +504,14 @@ const styles = StyleSheet.create({
   },
   filterTabsRow: {
     flexDirection: 'row',
-    gap: 8,
-    backgroundColor: 'transparent',
+    gap: 6,
+    borderRadius: 10,
+    padding: 4,
   },
   filterTab: {
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 8,
   },
   filterTabText: {
     fontSize: 12,
@@ -537,24 +526,28 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   tagChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 14,
+    paddingHorizontal: 12,
+    height: 28,
+    borderRadius: 999,
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
   },
   tagChipText: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   notesList: {
     padding: 16,
     gap: 12,
   },
   noteCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
     gap: 10,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   noteCardTopRow: {
     flexDirection: 'row',
@@ -678,13 +671,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 5,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
+    height: 36,
+    borderRadius: 10,
   },
   collideActionBtnText: {
     fontSize: 11,
-    fontWeight: '700',
-    color: '#FFFFFF',
+    fontWeight: '600',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -696,7 +688,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 6,
   },
   emptySubtitle: {
@@ -710,12 +702,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    height: 44,
+    borderRadius: 10,
   },
   recordCtaBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });
 
