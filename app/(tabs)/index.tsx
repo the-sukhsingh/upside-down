@@ -149,9 +149,9 @@ export default function HomeScreen() {
             </Text>
             <TouchableOpacity
               onPress={handleStartQuickRecord}
-              style={[styles.heroCtaBtn, { backgroundColor: colors.primary }]}>
-              <Ionicons name="mic" size={18} color={colors.primaryText} />
-              <Text style={[styles.heroCtaBtnText, { color: colors.primaryText }]}>Quick Record</Text>
+              style={[styles.heroCtaBtn, { backgroundColor: colors.primaryTonal }]}>
+              <Ionicons name="mic" size={18} color={colors.onPrimaryTonal} />
+              <Text style={[styles.heroCtaBtnText, { color: colors.onPrimaryTonal }]}>Quick Record</Text>
             </TouchableOpacity>
           </View>
           <View style={[styles.heroMicIconBg, { backgroundColor: colors.primaryContainer }]}>
@@ -371,9 +371,9 @@ export default function HomeScreen() {
 
                     <TouchableOpacity
                       onPress={() => handleStartMeetingRecord(m)}
-                      style={[styles.recordMeetingBtn, { backgroundColor: colors.primary }]}>
-                      <Ionicons name="mic" size={14} color={colors.primaryText} />
-                      <Text style={[styles.recordMeetingBtnText, { color: colors.primaryText }]}>Record</Text>
+                      style={[styles.recordMeetingBtn, { backgroundColor: colors.primaryTonal }]}>
+                      <Ionicons name="mic" size={14} color={colors.onPrimaryTonal} />
+                      <Text style={[styles.recordMeetingBtnText, { color: colors.onPrimaryTonal }]}>Record</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -390,16 +390,15 @@ export default function HomeScreen() {
           styles.floatingCameraFab,
           {
             bottom: insets.bottom + 85,
-            backgroundColor: colors.primary,
-            shadowColor: '#000',
+            backgroundColor: colors.primaryTonal,
           },
         ]}
         activeOpacity={0.82}
         accessibilityRole="button"
         accessibilityLabel="Digitalize Meeting Notes via Camera">
-        <Ionicons name="camera" size={24} color={colors.primaryText} />
-        <View style={[styles.fabAiBadge, { backgroundColor: colors.olive }]}>
-          <Ionicons name="sparkles" size={9} color="#FFF" />
+        <Ionicons name="camera" size={24} color={colors.onPrimaryTonal} />
+        <View style={[styles.fabAiBadge, { backgroundColor: colors.secondaryContainer, borderColor: colors.surface }]}>
+          <Ionicons name="sparkles" size={9} color={colors.onSecondaryContainer} />
         </View>
       </TouchableOpacity>
 
@@ -481,10 +480,6 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 8,
     zIndex: 900,
   },
   fabAiBadge: {
@@ -497,7 +492,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
-    borderColor: '#FFF',
   },
   screen: {
     flex: 1,
@@ -578,7 +572,7 @@ const styles = StyleSheet.create({
   heroCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
+    borderRadius: 20,
     padding: 18,
     borderWidth: 1,
     gap: 12,
@@ -590,7 +584,7 @@ const styles = StyleSheet.create({
   },
   heroHeading: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: -0.2,
   },
   heroSubtitle: {
@@ -602,14 +596,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    height: 44,
+    borderRadius: 10,
     alignSelf: 'flex-start',
     marginTop: 6,
   },
   heroCtaBtnText: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   heroMicIconBg: {
     width: 68,
@@ -619,7 +613,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   sectionCard: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
     gap: 12,
@@ -638,7 +632,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   sectionBadge: {
     fontSize: 12,
@@ -768,26 +762,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 9,
-    paddingVertical: 7,
-    borderRadius: 16,
+    paddingHorizontal: 10,
+    height: 36,
+    borderRadius: 10,
     borderWidth: 1,
   },
   briefingPillBtnText: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   recordMeetingBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 7,
-    borderRadius: 16,
+    height: 36,
+    borderRadius: 10,
   },
   recordMeetingBtnText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
   },
 });
 

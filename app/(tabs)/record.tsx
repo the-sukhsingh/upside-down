@@ -21,6 +21,7 @@ import { WaveformVisualizer } from '@/components/WaveformVisualizer';
 import { LiveTopicRadar } from '@/components/LiveTopicRadar';
 import { ToastNotification, ToastConfig } from '@/components/ToastNotification';
 import Colors from '@/constants/Colors';
+import { fontNames } from '@/constants/theme';
 import { useColorScheme } from '@/components/useColorScheme';
 import { Recording } from '@/types/meeting';
 
@@ -401,14 +402,14 @@ export default function RecordScreen() {
                     {
                       backgroundColor:
                         processingState.currentStage === 'transcribing'
-                          ? colors.primary
+                          ? colors.primaryTonal
                           : colors.secondary,
                     },
                   ]}>
                   {processingState.currentStage === 'summarizing' ? (
-                    <Ionicons name="checkmark" size={13} color="#fff" />
+                    <Ionicons name="checkmark" size={13} color={colors.onSecondaryContainer} />
                   ) : (
-                    <Text style={styles.stepBadgeText}>1</Text>
+                    <Text style={[styles.stepBadgeText, { color: colors.onPrimaryTonal }]}>1</Text>
                   )}
                 </View>
                 <Text style={[styles.stepLabel, { color: colors.text }]}>Transcribe</Text>
@@ -433,7 +434,7 @@ export default function RecordScreen() {
                     {
                       backgroundColor:
                         processingState.currentStage === 'summarizing'
-                          ? colors.primary
+                          ? colors.primaryTonal
                           : colors.surfaceContainerHigh,
                     },
                   ]}>
@@ -443,7 +444,7 @@ export default function RecordScreen() {
                       {
                         color:
                           processingState.currentStage === 'summarizing'
-                            ? '#fff'
+                            ? colors.onPrimaryTonal
                             : colors.textSecondary,
                       },
                     ]}>
@@ -461,7 +462,7 @@ export default function RecordScreen() {
                   styles.progressFill,
                   {
                     width: `${processingState.progressPercent}%`,
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.primaryTonal,
                   },
                 ]}
               />
@@ -488,10 +489,10 @@ export default function RecordScreen() {
 
         {/* State 2: Completed Result Preview */}
         {!processingState.isProcessing && completedRecording && (
-          <View style={[styles.card, styles.completedCard, { backgroundColor: colors.surface, borderColor: '#10B981' }]}>
+          <View style={[styles.card, styles.completedCard, { backgroundColor: colors.surface, borderColor: colors.secondary }]}>
             <View style={styles.completedHeader}>
               <View style={styles.completedTitleRow}>
-                <Ionicons name="checkmark-circle" size={24} color="#10B981" />
+                <Ionicons name="checkmark-circle" size={24} color={colors.secondary} />
                 <Text style={[styles.completedTitle, { color: colors.text }]}>Notes Generated</Text>
               </View>
               <Text style={[styles.completedMeta, { color: colors.textSecondary }]}>
@@ -525,11 +526,11 @@ export default function RecordScreen() {
             <View style={styles.completedActionsRow}>
               <TouchableOpacity
                 onPress={() => router.push(`/notes/${completedRecording.id}`)}
-                style={[styles.primaryActionBtn, { backgroundColor: colors.primary }]}>
-                <Text style={[styles.primaryActionBtnText, { color: colors.primaryText }]}>
+                style={[styles.primaryActionBtn, { backgroundColor: colors.primaryTonal }]}>
+                <Text style={[styles.primaryActionBtnText, { color: colors.onPrimaryTonal }]}>
                   View Full Note
                 </Text>
-                <Ionicons name="arrow-forward" size={16} color={colors.primaryText} />
+                <Ionicons name="arrow-forward" size={16} color={colors.onPrimaryTonal} />
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -537,7 +538,7 @@ export default function RecordScreen() {
                   setCompletedRecording(null);
                   resetProcessingState();
                 }}
-                style={[styles.secondaryActionBtn, { borderColor: colors.border }]}>
+                style={[styles.secondaryActionBtn, { borderColor: colors.border, backgroundColor: colors.surfaceContainer }]}>
                 <Ionicons name="mic-outline" size={16} color={colors.text} />
                 <Text style={[styles.secondaryActionBtnText, { color: colors.text }]}>
                   Record Another
@@ -549,19 +550,19 @@ export default function RecordScreen() {
 
         {/* State 3: Active Recording Session */}
         {activeRecording.isRecording && !processingState.isProcessing && (
-          <View style={[styles.card, styles.recordingCard, { backgroundColor: colors.surface, borderColor: colors.coral }]}>
+          <View style={[styles.card, styles.recordingCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <View style={styles.recordingHeaderRow}>
               <View style={styles.recordingPill}>
                 <View
                   style={[
                     styles.recordingPulseDot,
-                    { backgroundColor: activeRecording.isPaused ? '#F5C242' : '#E06D53' },
+                    { backgroundColor: activeRecording.isPaused ? colors.warning : colors.error },
                   ]}
                 />
                 <Text
                   style={[
                     styles.recordingPillText,
-                    { color: activeRecording.isPaused ? '#B45309' : '#C8533A' },
+                    { color: activeRecording.isPaused ? colors.warning : colors.error },
                   ]}>
                   {activeRecording.isPaused ? 'PAUSED' : 'RECORDING (OFFLINE)'}
                 </Text>
@@ -620,7 +621,7 @@ export default function RecordScreen() {
                 style={({ pressed }) => [
                   styles.iconControlBtn,
                   {
-                    backgroundColor: colors.surfaceContainer,
+                    backgroundColor: colors.surfaceContainerHighest,
                     opacity: pressed || isActionPending ? 0.6 : 1,
                   },
                 ]}>
@@ -637,16 +638,16 @@ export default function RecordScreen() {
                 style={({ pressed }) => [
                   styles.stopBtn,
                   {
-                    backgroundColor: colors.primary,
+                    backgroundColor: colors.error,
                     opacity: pressed || isActionPending ? 0.75 : 1,
                   },
                 ]}>
                 {isActionPending ? (
-                  <ActivityIndicator size="small" color={colors.primaryText} />
+                  <ActivityIndicator size="small" color={colors.onError} />
                 ) : (
-                  <Ionicons name="stop" size={20} color={colors.primaryText} />
+                  <Ionicons name="stop" size={20} color={colors.onError} />
                 )}
-                <Text style={[styles.stopBtnText, { color: colors.primaryText }]}>
+                <Text style={[styles.stopBtnText, { color: colors.onError }]}>
                   {isActionPending ? 'Finishing...' : 'Stop & Transcribe'}
                 </Text>
               </Pressable>
@@ -707,9 +708,9 @@ export default function RecordScreen() {
               <TouchableOpacity
                 onPress={handleStart}
                 activeOpacity={0.85}
-                style={[styles.bigRecordButton, { backgroundColor: colors.primary }]}>
+                style={[styles.bigRecordButton, { backgroundColor: colors.primaryTonal }]}>
                 <View style={styles.bigRecordInner}>
-                  <Ionicons name="mic" size={38} color="#FFFFFF" />
+                  <Ionicons name="mic" size={38} color={colors.onPrimaryTonal} />
                 </View>
               </TouchableOpacity>
               <Text style={[styles.recordCtaPrompt, { color: colors.text }]}>Tap to Record</Text>
@@ -724,8 +725,8 @@ export default function RecordScreen() {
                 HOW IT WORKS
               </Text>
               <View style={styles.flowStepRow}>
-                <View style={[styles.flowStepNumber, { backgroundColor: colors.primary }]}>
-                  <Text style={styles.flowStepNumberText}>1</Text>
+                <View style={[styles.flowStepNumber, { backgroundColor: colors.primaryTonal }]}>
+                  <Text style={[styles.flowStepNumberText, { color: colors.onPrimaryTonal }]}>1</Text>
                 </View>
                 <View style={styles.flowStepTextCol}>
                   <Text style={[styles.flowStepHeading, { color: colors.text }]}>Record Audio</Text>
@@ -736,8 +737,8 @@ export default function RecordScreen() {
               </View>
 
               <View style={styles.flowStepRow}>
-                <View style={[styles.flowStepNumber, { backgroundColor: colors.secondary }]}>
-                  <Text style={styles.flowStepNumberText}>2</Text>
+                <View style={[styles.flowStepNumber, { backgroundColor: colors.secondaryContainer }]}>
+                  <Text style={[styles.flowStepNumberText, { color: colors.onSecondaryContainer }]}>2</Text>
                 </View>
                 <View style={styles.flowStepTextCol}>
                   <Text style={[styles.flowStepHeading, { color: colors.text }]}>Transcribe Audio</Text>
@@ -748,8 +749,8 @@ export default function RecordScreen() {
               </View>
 
               <View style={styles.flowStepRow}>
-                <View style={[styles.flowStepNumber, { backgroundColor: colors.tertiary }]}>
-                  <Text style={[styles.flowStepNumberText, { color: '#3D2E00' }]}>3</Text>
+                <View style={[styles.flowStepNumber, { backgroundColor: colors.surfaceContainerHighest }]}>
+                  <Text style={[styles.flowStepNumberText, { color: colors.text }]}>3</Text>
                 </View>
                 <View style={styles.flowStepTextCol}>
                   <Text style={[styles.flowStepHeading, { color: colors.text }]}>AI Model Creates Notes</Text>
@@ -879,13 +880,15 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 18,
     borderWidth: 1,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   cardSectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     marginBottom: 4,
   },
   cardSectionSubtitle: {
@@ -898,7 +901,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     marginBottom: 12,
   },
@@ -922,7 +925,7 @@ const styles = StyleSheet.create({
   },
   apiBadgeTitle: {
     fontSize: 13,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   apiBadgeSub: {
     fontSize: 11,
@@ -932,8 +935,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 12,
-    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    borderRadius: 10,
     borderWidth: 1,
     marginBottom: 20,
   },
@@ -946,7 +950,7 @@ const styles = StyleSheet.create({
   },
   pickerTriggerText: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '500',
     flex: 1,
   },
   recordCtaContainer: {
@@ -956,23 +960,18 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   bigRecordButton: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#E06D53',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 8,
   },
   bigRecordInner: {
     backgroundColor: 'transparent',
   },
   recordCtaPrompt: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '600',
     marginTop: 14,
   },
   recordCtaSubtext: {
@@ -980,14 +979,14 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
   flowGuideBox: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 14,
     marginTop: 10,
     gap: 12,
   },
   flowGuideTitle: {
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.8,
   },
   flowStepRow: {
@@ -1005,9 +1004,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   flowStepNumberText: {
-    color: '#fff',
     fontSize: 11,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   flowStepTextCol: {
     flex: 1,
@@ -1023,7 +1021,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
   recordingCard: {
-    borderWidth: 1.5,
+    borderWidth: 1,
   },
   recordingHeaderRow: {
     flexDirection: 'row',
@@ -1038,18 +1036,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   recordingPulseDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 4.5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   recordingPillText: {
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '600',
     letterSpacing: 0.5,
   },
   recordingTimerText: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 56,
+    lineHeight: 60,
+    fontWeight: '600',
+    fontFamily: fontNames.mono,
     fontVariant: ['tabular-nums'],
   },
   meetingTitleDisplay: {
@@ -1074,16 +1074,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   iconControlBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stopBtn: {
     flex: 1,
-    height: 48,
-    borderRadius: 24,
+    height: 44,
+    borderRadius: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1091,7 +1091,7 @@ const styles = StyleSheet.create({
   },
   stopBtnText: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '600',
   },
   processingCard: {
     borderWidth: 1.5,
@@ -1129,8 +1129,7 @@ const styles = StyleSheet.create({
   },
   stepBadgeText: {
     fontSize: 10,
-    fontWeight: '700',
-    color: '#fff',
+    fontWeight: '600',
   },
   stepLabel: {
     fontSize: 12,
@@ -1142,8 +1141,8 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   progressTrack: {
-    height: 6,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   progressFill: {
