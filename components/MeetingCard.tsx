@@ -14,7 +14,7 @@ interface MeetingCardProps {
   isCurrentlyRecording?: boolean;
 }
 
-const AVATAR_COLORS = ['#F5C242', '#E06D53', '#4D5C3B', '#3B82F6', '#8B5CF6'];
+const AVATAR_COLORS = ['#A78BFA', '#34D399', '#71717A', '#C4B5FD', '#FBBF24'];
 
 function getInitials(name: string): string {
   if (!name) return 'U';
@@ -155,10 +155,10 @@ export const MeetingCard = memo(function MeetingCard({
                 styles.actionBtn,
                 {
                   backgroundColor: isCurrentlyRecording
-                    ? colors.error
+                    ? colors.danger
                     : hasRecording
-                    ? colors.surfaceContainerHigh
-                    : colors.primary,
+                    ? colors.surfaceRaised
+                    : colors.primaryTonal,
                 },
               ]}>
               <Ionicons
@@ -166,10 +166,10 @@ export const MeetingCard = memo(function MeetingCard({
                 size={13}
                 color={
                   isCurrentlyRecording
-                    ? colors.onError
+                    ? colors.onPrimaryStrong
                     : hasRecording
-                    ? colors.text
-                    : colors.primaryText
+                    ? colors.textSoft
+                    : colors.onPrimaryTonal
                 }
                 style={{ marginRight: 5 }}
               />
@@ -178,10 +178,10 @@ export const MeetingCard = memo(function MeetingCard({
                   styles.actionBtnText,
                   {
                     color: isCurrentlyRecording
-                      ? colors.onError
+                      ? colors.onPrimaryStrong
                       : hasRecording
-                      ? colors.text
-                      : colors.primaryText,
+                      ? colors.textSoft
+                      : colors.onPrimaryTonal,
                   },
                 ]}>
                 {isCurrentlyRecording ? 'Live' : hasRecording ? 'View Note' : 'Record'}
@@ -199,12 +199,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 1,
     padding: 16,
-    marginBottom: 12,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.04,
-    shadowRadius: 10,
+    marginBottom: 16,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   topRow: {
     flexDirection: 'row',
@@ -222,25 +219,25 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   threeDotsBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     letterSpacing: -0.2,
-    lineHeight: 21,
+    lineHeight: 24,
     marginBottom: 10,
   },
   linkChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 28,
+    borderRadius: 999,
     marginBottom: 12,
   },
   linkText: {
@@ -270,7 +267,7 @@ const styles = StyleSheet.create({
   avatarInitials: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#18181B',
   },
   extraAttendeesBadge: {
     width: 26,
@@ -297,9 +294,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingVertical: 6,
+    height: 28,
     paddingHorizontal: 10,
-    borderRadius: 16,
+    borderRadius: 999,
     borderWidth: 1,
   },
   briefingBtnText: {
@@ -309,14 +306,11 @@ const styles = StyleSheet.create({
   actionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 7,
+    height: 36,
     paddingHorizontal: 14,
-    borderRadius: 18,
-    shadowColor: '#E06D53',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.22,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 10,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   actionBtnText: {
     fontSize: 12,

@@ -105,9 +105,9 @@ export function IdeaCollisionCard({
             <View
               style={[
                 styles.experimentBadge,
-                { backgroundColor: 'rgba(16, 185, 129, 0.15)' },
+                { backgroundColor: colors.successSoft },
               ]}>
-              <Text style={styles.experimentBadgeText}>🔬 Testing</Text>
+              <Text style={[styles.experimentBadgeText, { color: colors.success }]}>🔬 Testing</Text>
             </View>
           )}
         </View>
@@ -153,10 +153,8 @@ export function IdeaCollisionCard({
         style={[
           styles.mechanismCard,
           {
-            backgroundColor:
-              theme === 'dark' ? 'rgba(99, 102, 241, 0.12)' : '#EEF2FF',
-            borderColor:
-              theme === 'dark' ? 'rgba(99, 102, 241, 0.3)' : '#C7D2FE',
+            backgroundColor: colors.primarySoft,
+            borderColor: colors.borderStrong,
           },
         ]}>
         <View style={styles.mechanismHeader}>
@@ -242,10 +240,10 @@ export function IdeaCollisionCard({
                     {
                       backgroundColor:
                         index === 0
-                          ? '#3B82F6'
+                          ? colors.primary
                           : index === 1
-                          ? '#10B981'
-                          : '#8B5CF6',
+                          ? colors.success
+                          : colors.warning,
                     },
                   ]}
                 />
@@ -293,15 +291,13 @@ export function IdeaCollisionCard({
         style={[
           styles.whyUsefulBox,
           {
-            backgroundColor:
-              theme === 'dark' ? 'rgba(245, 158, 11, 0.08)' : '#FFFBEB',
-            borderColor:
-              theme === 'dark' ? 'rgba(245, 158, 11, 0.25)' : '#FDE68A',
+            backgroundColor: colors.warningSoft,
+            borderColor: colors.borderStrong,
           },
         ]}>
         <View style={styles.whyUsefulHeader}>
-          <Ionicons name="bulb-outline" size={15} color="#D97706" />
-          <Text style={styles.whyUsefulLabel}>WHY THIS IS USEFUL</Text>
+          <Ionicons name="bulb-outline" size={15} color={colors.warning} />
+          <Text style={[styles.whyUsefulLabel, { color: colors.warning }]}>WHY THIS IS USEFUL</Text>
         </View>
         <Text style={[styles.whyUsefulText, { color: colors.text }]}>
           {collision.whyUseful}
@@ -313,16 +309,14 @@ export function IdeaCollisionCard({
         style={[
           styles.experimentCard,
           {
-            backgroundColor:
-              theme === 'dark' ? 'rgba(16, 185, 129, 0.08)' : '#ECFDF5',
-            borderColor:
-              theme === 'dark' ? 'rgba(16, 185, 129, 0.25)' : '#A7F3D0',
+            backgroundColor: colors.successSoft,
+            borderColor: colors.borderStrong,
           },
         ]}>
         <View style={styles.experimentHeaderRow}>
           <View style={styles.experimentTitleRow}>
-            <Ionicons name="flask-outline" size={15} color="#059669" />
-            <Text style={styles.experimentLabel}>SMALL TESTABLE EXPERIMENT</Text>
+            <Ionicons name="flask-outline" size={15} color={colors.success} />
+            <Text style={[styles.experimentLabel, { color: colors.success }]}>SMALL TESTABLE EXPERIMENT</Text>
           </View>
 
           {onStartExperiment && (
@@ -331,15 +325,15 @@ export function IdeaCollisionCard({
               style={[
                 styles.experimentActionBtn,
                 {
-                  backgroundColor: isExperimenting ? '#059669' : '#10B981',
+                  backgroundColor: isExperimenting ? colors.successTonal : colors.success,
                 },
               ]}>
               <Ionicons
                 name={isExperimenting ? 'checkmark-circle' : 'play-outline'}
                 size={12}
-                color="#FFFFFF"
+                color={colors.onSuccessTonal}
               />
-              <Text style={styles.experimentActionText}>
+              <Text style={[styles.experimentActionText, { color: colors.onSuccessTonal }]}>
                 {isExperimenting ? 'Testing' : 'Test This Idea'}
               </Text>
             </TouchableOpacity>
@@ -368,15 +362,12 @@ export function IdeaCollisionCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
     marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 2,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   topRow: {
     flexDirection: 'row',
@@ -397,8 +388,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    height: 24,
+    borderRadius: 999,
   },
   sparkleBadgeText: {
     fontSize: 10,
@@ -407,8 +398,9 @@ const styles = StyleSheet.create({
   },
   synergyBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    height: 24,
+    borderRadius: 999,
+    justifyContent: 'center',
   },
   synergyText: {
     fontSize: 11,
@@ -416,13 +408,13 @@ const styles = StyleSheet.create({
   },
   experimentBadge: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    height: 24,
+    borderRadius: 999,
+    justifyContent: 'center',
   },
   experimentBadgeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#059669',
   },
   actionsRow: {
     flexDirection: 'row',
@@ -431,20 +423,20 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   iconBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ideaTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '600',
     lineHeight: 24,
     marginBottom: 12,
   },
   mechanismCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
     borderWidth: 1,
     marginBottom: 12,
@@ -486,9 +478,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 999,
     borderWidth: 1,
   },
   conceptChipText: {
@@ -518,8 +510,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 14,
+    padding: 12,
     borderWidth: 1,
   },
   sourceCardLeft: {
@@ -562,7 +554,7 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
   whyUsefulBox: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
     borderWidth: 1,
     marginBottom: 12,
@@ -577,7 +569,6 @@ const styles = StyleSheet.create({
   whyUsefulLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#D97706',
     letterSpacing: 0.5,
   },
   whyUsefulText: {
@@ -586,7 +577,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   experimentCard: {
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 12,
     borderWidth: 1,
     marginBottom: 10,
@@ -607,21 +598,19 @@ const styles = StyleSheet.create({
   experimentLabel: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#059669',
     letterSpacing: 0.5,
   },
   experimentActionBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 10,
   },
   experimentActionText: {
     fontSize: 10,
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   experimentText: {
     fontSize: 12,

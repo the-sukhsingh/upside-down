@@ -152,13 +152,13 @@ export function BriefingCard({
       {briefing.unresolvedQuestions.length > 0 && (
         <View style={styles.sectionCol}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="help-circle-outline" size={15} color="#D97706" />
-            <Text style={[styles.sectionHeading, { color: '#D97706' }]}>Unresolved Questions to Ask</Text>
+            <Ionicons name="help-circle-outline" size={15} color={colors.warning} />
+            <Text style={[styles.sectionHeading, { color: colors.warning }]}>Unresolved Questions to Ask</Text>
           </View>
           <View style={styles.itemsList}>
             {briefing.unresolvedQuestions.map((q, idx) => (
               <View key={idx} style={styles.bulletRow}>
-                <Ionicons name="help" size={13} color="#D97706" style={{ marginTop: 2 }} />
+                <Ionicons name="help" size={13} color={colors.warning} style={{ marginTop: 2 }} />
                 <Text style={[styles.bulletText, { color: colors.text }]}>{q}</Text>
               </View>
             ))}
@@ -189,11 +189,13 @@ export function BriefingCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
-    borderWidth: 1.5,
+    borderRadius: 20,
+    borderWidth: 1,
     padding: 16,
     gap: 14,
     marginVertical: 8,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   headerRow: {
     flexDirection: 'row',
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
   iconBox: {
     width: 36,
     height: 36,
-    borderRadius: 12,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -220,11 +222,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
   },
   cardSubtitle: {
-    fontSize: 11,
+    fontSize: 12,
     marginTop: 1,
   },
   headerActions: {
@@ -234,15 +236,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   actionBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   headlineBox: {
     padding: 12,
-    borderRadius: 10,
+    borderRadius: 14,
     borderWidth: 1,
   },
   headlineText: {
@@ -262,10 +264,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   sectionHeading: {
-    fontSize: 13,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.8,
   },
   itemsList: {
     gap: 6,
@@ -288,8 +290,8 @@ const styles = StyleSheet.create({
     width: 16,
   },
   taskItemBox: {
-    padding: 10,
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   taskTextCol: {
@@ -310,9 +312,11 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   priorityBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingHorizontal: 8,
+    height: 24,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   priorityText: {
     fontSize: 10,
