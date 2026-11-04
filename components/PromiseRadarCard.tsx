@@ -83,9 +83,9 @@ export function PromiseRadarCard({
 
       {/* Overdue / Urgent Alert Banner */}
       {overdueCount > 0 ? (
-        <View style={[styles.urgentBanner, { backgroundColor: '#FEF3C7', borderColor: '#F59E0B' }]}>
-          <Ionicons name="alarm-outline" size={16} color="#B45309" />
-          <Text style={[styles.urgentBannerText, { color: '#92400E' }]}>
+        <View style={[styles.urgentBanner, { backgroundColor: colors.warningSoft, borderColor: colors.warning }]}>
+          <Ionicons name="alarm-outline" size={16} color={colors.warning} />
+          <Text style={[styles.urgentBannerText, { color: colors.warning }]}>
             <Text style={{ fontWeight: '700' }}>{overdueCount} commitment(s)</Text> require attention today!
           </Text>
         </View>
@@ -93,21 +93,20 @@ export function PromiseRadarCard({
 
       {/* Filter Tabs */}
       {allowFilter ? (
-        <View style={styles.tabsRow}>
+        <View style={[styles.tabsRow, { backgroundColor: colors.surfaceRaised }]}>
           <TouchableOpacity
             onPress={() => setActiveDirection('all')}
             style={[
               styles.tabBtn,
               {
                 backgroundColor:
-                  activeDirection === 'all' ? colors.primaryContainer : colors.surfaceContainerLow,
-                borderColor: activeDirection === 'all' ? colors.primary : colors.cardBorder,
+                  activeDirection === 'all' ? colors.primaryTonal : 'transparent',
               },
             ]}>
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeDirection === 'all' ? colors.primary : colors.textSecondary },
+                { color: activeDirection === 'all' ? colors.onPrimaryTonal : colors.textSoft },
               ]}>
               All ({commitments.filter((c) => !c.completed).length})
             </Text>
@@ -119,19 +118,18 @@ export function PromiseRadarCard({
               styles.tabBtn,
               {
                 backgroundColor:
-                  activeDirection === 'i_owe' ? colors.primaryContainer : colors.surfaceContainerLow,
-                borderColor: activeDirection === 'i_owe' ? colors.primary : colors.cardBorder,
+                  activeDirection === 'i_owe' ? colors.primaryTonal : 'transparent',
               },
             ]}>
             <Ionicons
               name="arrow-up-circle-outline"
               size={13}
-              color={activeDirection === 'i_owe' ? colors.primary : colors.textSecondary}
+              color={activeDirection === 'i_owe' ? colors.onPrimaryTonal : colors.textSoft}
             />
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeDirection === 'i_owe' ? colors.primary : colors.textSecondary },
+                { color: activeDirection === 'i_owe' ? colors.onPrimaryTonal : colors.textSoft },
               ]}>
               I Owe ({iOweCount})
             </Text>
@@ -143,19 +141,18 @@ export function PromiseRadarCard({
               styles.tabBtn,
               {
                 backgroundColor:
-                  activeDirection === 'they_owe_me' ? colors.secondaryContainer : colors.surfaceContainerLow,
-                borderColor: activeDirection === 'they_owe_me' ? colors.secondary : colors.cardBorder,
+                  activeDirection === 'they_owe_me' ? colors.primaryTonal : 'transparent',
               },
             ]}>
             <Ionicons
               name="arrow-down-circle-outline"
               size={13}
-              color={activeDirection === 'they_owe_me' ? colors.secondary : colors.textSecondary}
+              color={activeDirection === 'they_owe_me' ? colors.onPrimaryTonal : colors.textSoft}
             />
             <Text
               style={[
                 styles.tabBtnText,
-                { color: activeDirection === 'they_owe_me' ? colors.secondary : colors.textSecondary },
+                { color: activeDirection === 'they_owe_me' ? colors.onPrimaryTonal : colors.textSoft },
               ]}>
               They Owe Me ({theyOweMeCount})
             </Text>
@@ -179,9 +176,10 @@ export function PromiseRadarCard({
         ) : (
           filtered.map((item) => {
             const isIOwe = item.direction === 'i_owe';
-            const isDueToday =
-              (item.deadlinePhrase || '').toLowerCase().includes('today') ||
-              (item.dueDate && item.dueDate === new Date().toISOString().slice(0, 10));
+            const phraseLower = (item.deadlinePhrase || '').toLowerCase();
+            const isDueToday = phraseLower.includes('today') || (item.dueDate && item.dueDate === new Date().toISOString().slice(0, 10));
+            const isTomorrow = phraseLower.includes('tomorrow');
+            const isOverdue = phraseLower.includes('yesterday') || phraseLower.includes('urgent') || phraseLower.includes('overdue');
 
             return (
               <View
@@ -192,25 +190,25 @@ export function PromiseRadarCard({
                     backgroundColor: item.completed
                       ? colors.surfaceContainerLow
                       : colors.surfaceContainerLowest,
-                    borderColor: item.completed ? colors.cardBorder : isIOwe ? colors.primary : colors.secondary,
+                    borderColor: item.completed ? colors.cardBorder : isIOwe ? colors.primary : colors.success,
                     opacity: item.completed ? 0.6 : 1,
                   },
                 ]}>
-                {/* Checkbox */}
+                {/* Checkbox (22px circle, 1.5px borderStrong, filled success when done) */}
                 <TouchableOpacity
                   onPress={() => onToggleCommitment(item.id)}
                   style={[
                     styles.checkboxBtn,
                     {
                       backgroundColor: item.completed
-                        ? colors.tint
-                        : colors.surfaceContainer,
-                      borderColor: item.completed ? colors.tint : colors.border,
+                        ? colors.success
+                        : 'transparent',
+                      borderColor: item.completed ? colors.success : colors.borderStrong,
                     },
                   ]}
                   accessibilityRole="checkbox"
                   accessibilityState={{ checked: item.completed }}>
-                  {item.completed && <Ionicons name="checkmark" size={14} color="#FFFFFF" />}
+                  {item.completed && <Ionicons name="checkmark" size={14} color={colors.onSuccessTonal} />}
                 </TouchableOpacity>
 
                 {/* Content */}
@@ -221,18 +219,22 @@ export function PromiseRadarCard({
                       style={[
                         styles.directionPill,
                         {
-                          backgroundColor: isIOwe ? colors.primaryContainer : colors.secondaryContainer,
+                          backgroundColor: isOverdue
+                            ? colors.dangerSoft
+                            : isIOwe
+                            ? colors.primarySoft
+                            : colors.successSoft,
                         },
                       ]}>
                       <Ionicons
                         name={isIOwe ? 'arrow-up' : 'arrow-down'}
                         size={10}
-                        color={isIOwe ? colors.primary : colors.secondary}
+                        color={isOverdue ? colors.danger : isIOwe ? colors.primary : colors.success}
                       />
                       <Text
                         style={[
                           styles.directionPillText,
-                          { color: isIOwe ? colors.primary : colors.secondary },
+                          { color: isOverdue ? colors.danger : isIOwe ? colors.primary : colors.success },
                         ]}>
                         {isIOwe ? `I Owe → ${item.person}` : `${item.speaker} Owes Me`}
                       </Text>
@@ -244,19 +246,39 @@ export function PromiseRadarCard({
                         style={[
                           styles.deadlineBadge,
                           {
-                            backgroundColor: isDueToday ? '#FEF3C7' : colors.surfaceContainer,
-                            borderColor: isDueToday ? '#F59E0B' : colors.cardBorder,
+                            backgroundColor: isOverdue
+                              ? colors.dangerSoft
+                              : isDueToday || isTomorrow
+                              ? colors.warningSoft
+                              : colors.surfaceRaised,
+                            borderColor: isOverdue
+                              ? colors.danger
+                              : isDueToday || isTomorrow
+                              ? colors.warning
+                              : colors.border,
                           },
                         ]}>
                         <Ionicons
                           name="time-outline"
                           size={11}
-                          color={isDueToday ? '#B45309' : colors.textSecondary}
+                          color={
+                            isOverdue
+                              ? colors.danger
+                              : isDueToday || isTomorrow
+                              ? colors.warning
+                              : colors.textSoft
+                          }
                         />
                         <Text
                           style={[
                             styles.deadlineBadgeText,
-                            { color: isDueToday ? '#B45309' : colors.textSecondary },
+                            {
+                              color: isOverdue
+                                ? colors.danger
+                                : isDueToday || isTomorrow
+                                ? colors.warning
+                                : colors.textSoft,
+                            },
                           ]}>
                           {item.deadlinePhrase}
                         </Text>
@@ -308,11 +330,13 @@ export function PromiseRadarCard({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     padding: 16,
     gap: 12,
     marginVertical: 6,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   headerRow: {
     flexDirection: 'row',
@@ -328,8 +352,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   radarIconBox: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
@@ -339,8 +363,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 16,
-    fontWeight: '700',
+    fontSize: 18,
+    fontWeight: '600',
     letterSpacing: -0.2,
   },
   subtitle: {
@@ -351,9 +375,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    height: 28,
+    borderRadius: 999,
     borderWidth: 1,
   },
   completedPillText: {
@@ -375,17 +399,17 @@ const styles = StyleSheet.create({
   },
   tabsRow: {
     flexDirection: 'row',
-    gap: 8,
-    backgroundColor: 'transparent',
+    gap: 4,
+    padding: 4,
+    borderRadius: 10,
   },
   tabBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 16,
-    borderWidth: 1,
+    height: 28,
+    borderRadius: 999,
   },
   tabBtnText: {
     fontSize: 11,
@@ -399,7 +423,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    borderRadius: 12,
+    borderRadius: 14,
     gap: 6,
   },
   emptyText: {
@@ -411,13 +435,13 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     gap: 10,
     padding: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
   },
   checkboxBtn: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     borderWidth: 1.5,
     alignItems: 'center',
     justifyContent: 'center',
@@ -439,9 +463,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    height: 24,
+    borderRadius: 999,
   },
   directionPillText: {
     fontSize: 10,
@@ -452,9 +476,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 3,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
+    paddingHorizontal: 8,
+    height: 24,
+    borderRadius: 999,
     borderWidth: 1,
   },
   deadlineBadgeText: {

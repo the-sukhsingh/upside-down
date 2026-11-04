@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { Text, View } from './Themed';
 import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
@@ -102,20 +102,20 @@ export function RecordingPlayer({
         {/* Rewind 5s */}
         <TouchableOpacity
           onPress={() => skipSeconds(-5)}
-          style={[styles.skipBtn, { backgroundColor: colors.surfaceContainer }]}
+          style={[styles.skipBtn, { backgroundColor: colors.surfaceRaised }]}
           accessibilityLabel="Rewind 5 seconds">
-          <Ionicons name="play-back" size={14} color={colors.textSecondary} />
+          <Ionicons name="play-back" size={16} color={colors.textSoft} />
         </TouchableOpacity>
 
         {/* Play/Pause Button */}
         <TouchableOpacity
           onPress={togglePlay}
-          style={[styles.playBtn, { backgroundColor: colors.primary }]}
+          style={[styles.playBtn, { backgroundColor: colors.primaryTonal }]}
           accessibilityLabel={isPlaying ? 'Pause' : 'Play'}>
           <Ionicons
             name={isPlaying ? 'pause' : 'play'}
-            size={18}
-            color={colors.primaryText}
+            size={20}
+            color={colors.onPrimaryTonal}
             style={!isPlaying ? { marginLeft: 2 } : undefined}
           />
         </TouchableOpacity>
@@ -123,20 +123,20 @@ export function RecordingPlayer({
         {/* Forward 5s */}
         <TouchableOpacity
           onPress={() => skipSeconds(5)}
-          style={[styles.skipBtn, { backgroundColor: colors.surfaceContainer }]}
+          style={[styles.skipBtn, { backgroundColor: colors.surfaceRaised }]}
           accessibilityLabel="Fast forward 5 seconds">
-          <Ionicons name="play-forward" size={14} color={colors.textSecondary} />
+          <Ionicons name="play-forward" size={16} color={colors.textSoft} />
         </TouchableOpacity>
 
         {/* Track & Time */}
         <View style={styles.trackInfo}>
           <View style={styles.timeRow}>
             <Text style={[styles.timeText, { color: colors.text }]}>{formatSecs(currentTime)}</Text>
-            <Text style={[styles.timeText, { color: colors.textSecondary }]}>{formatSecs(totalDuration)}</Text>
+            <Text style={[styles.timeText, { color: colors.textSoft }]}>{formatSecs(totalDuration)}</Text>
           </View>
 
-          <View style={[styles.progressBarBg, { backgroundColor: colors.cardBorder }]}>
-            <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.tint }]} />
+          <View style={[styles.progressBarBg, { backgroundColor: '#27272A' }]}>
+            <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: colors.primaryTonal }]} />
           </View>
         </View>
       </View>
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: 8,
+    borderRadius: 10,
   },
   evidenceBadgeText: {
     fontSize: 11,
@@ -170,16 +170,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   skipBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   playBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -195,17 +195,19 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   timeText: {
-    fontSize: 11,
-    fontWeight: '600',
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: '500',
+    fontFamily: Platform.select({ web: 'Geist Mono, monospace', default: 'GeistMono-Medium' }),
     fontVariant: ['tabular-nums'],
   },
   progressBarBg: {
-    height: 5,
-    borderRadius: 2.5,
+    height: 4,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    borderRadius: 2.5,
+    borderRadius: 2,
   },
 });

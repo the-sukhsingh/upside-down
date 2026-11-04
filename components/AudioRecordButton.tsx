@@ -54,7 +54,7 @@ export function AudioRecordButton({
   }, [isRecording, isPaused, pulseAnim]);
 
   if (!isRecording) {
-    // Idle state: Google Recorder M3 Large Record Button
+    // Idle state: Record Button
     return (
       <View style={styles.idleContainer}>
         <Pressable
@@ -65,7 +65,7 @@ export function AudioRecordButton({
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: colors.primaryContainer,
+              backgroundColor: colors.primaryTonal,
               transform: [{ scale: pressed ? 0.94 : 1 }],
             },
           ]}>
@@ -73,7 +73,7 @@ export function AudioRecordButton({
             style={[
               styles.m3InnerDot,
               {
-                backgroundColor: colors.primary,
+                backgroundColor: colors.primaryStrong,
               },
             ]}
           />
@@ -85,7 +85,7 @@ export function AudioRecordButton({
   // Active recording deck: Stop & Pause
   return (
     <View style={styles.activeDeck}>
-      {/* Pause/Resume M3 Filled Tonal button */}
+      {/* Pause/Resume button */}
       {onPressPause ? (
         <Pressable
           onPress={onPressPause}
@@ -95,33 +95,22 @@ export function AudioRecordButton({
               width: size * 0.72,
               height: size * 0.72,
               borderRadius: (size * 0.72) / 2,
-              backgroundColor: isPaused ? colors.secondaryContainer : colors.surfaceContainerHighest,
+              backgroundColor: colors.surfaceRaised,
+              borderWidth: 1,
+              borderColor: colors.border,
               transform: [{ scale: pressed ? 0.92 : 1 }],
             },
           ]}>
           <Ionicons
             name={isPaused ? 'play' : 'pause'}
             size={22}
-            color={isPaused ? colors.onSecondaryContainer : colors.onSurface}
+            color={colors.textSoft}
           />
         </Pressable>
       ) : null}
 
-      {/* Main Stop & Save button with M3 animated pulse ring */}
+      {/* Main Stop & Save button */}
       <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-        <Animated.View
-          style={[
-            styles.pulseRing,
-            {
-              width: size * 1.3,
-              height: size * 1.3,
-              borderRadius: (size * 1.3) / 2,
-              backgroundColor: colors.errorContainer,
-              transform: [{ scale: pulseAnim }],
-              opacity: isPaused ? 0 : 0.45,
-            },
-          ]}
-        />
         <Pressable
           onPress={onPressStop}
           style={({ pressed }) => [
@@ -130,11 +119,11 @@ export function AudioRecordButton({
               width: size,
               height: size,
               borderRadius: size / 2,
-              backgroundColor: colors.error,
+              backgroundColor: colors.danger,
               transform: [{ scale: pressed ? 0.94 : 1 }],
             },
           ]}>
-          <View style={[styles.m3StopInnerSquare, { backgroundColor: colors.onError }]} />
+          <View style={[styles.m3StopInnerSquare, { backgroundColor: colors.onPrimaryStrong }]} />
         </Pressable>
       </View>
     </View>
@@ -150,11 +139,7 @@ const styles = StyleSheet.create({
   m3RecordCircle: {
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    elevation: 0,
   },
   m3InnerDot: {
     width: '44%',
@@ -171,11 +156,7 @@ const styles = StyleSheet.create({
   m3ControlBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    elevation: 0,
   },
   pulseRing: {
     position: 'absolute',
@@ -183,11 +164,7 @@ const styles = StyleSheet.create({
   m3StopCircle: {
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
+    elevation: 0,
   },
   m3StopInnerSquare: {
     width: '36%',
